@@ -1,0 +1,3826 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <link rel="stylesheet" href="main.css">
+    <!--
+        <link rel="stylesheet" href="DatePicker.scss">
+    -->
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+
+    <!-- DataTables CSS -->
+        <link rel="stylesheet" type="text/css" href="DataTables-1.10.7/media/css/jquery.dataTables.css">  
+    <!-- jQuery -->
+        <script type="text/javascript" charset="utf8" src="DataTables-1.10.7/media/js/jquery.js"></script>
+    <!-- DataTables -->
+        <script type="text/javascript" charset="utf8" src="DataTables-1.10.7/media/js/jquery.dataTables.js"></script>
+
+    <style type="text/css">
+        .main {
+            word-wrap: break-word;
+            word-break:break-all;
+        }
+    </style>
+
+    <style>
+        #drop{
+            border:2px dashed #bbb;
+            width: 380px;
+            height: 100%;
+            border-radius:4px;
+            margin-left: 12px;
+            margin-bottom: 12px;
+            text-align: center;
+            vertical-align: center;
+            font:16pt bold,"Vollkorn";color:#bbb
+        }
+        #b64data{
+            width:100%;
+        }
+    </style>
+    
+    <script src="mootools-datepicker/Test/mootools-core.js" type="text/javascript"></script>
+	<script src="mootools-datepicker/Test/mootools-more.js" type="text/javascript"></script>
+	<script src="mootools-datepicker/Source/Locale.es-ES-DatePicker.js" type="text/javascript"></script>
+	<script src="mootools-datepicker/Source/Picker.js" type="text/javascript"></script>
+	<script src="mootools-datepicker/Source/Picker.Attach.js" type="text/javascript"></script>
+	<script src="mootools-datepicker/Source/Picker.Date.js" type="text/javascript"></script>
+
+    <link href="mootools-datepicker/Source/datepicker_vista/datepicker_vista.css" rel="stylesheet">
+    <link href="mootools-datepicker/Source/datepicker_dashboard/datepicker_dashboard.css" rel="stylesheet">
+     
+   
+    <!-- SOPORTE PARA GRÁFICAS CON LIBRERÍA RGRAPH -->
+
+    <script src="RGraph/libraries/RGraph.common.core.js" ></script>
+    <script src="RGraph/libraries/RGraph.common.dynamic.js" ></script>
+    <script src="RGraph/libraries/RGraph.common.tooltips.js" ></script>
+    <script src="RGraph/libraries/RGraph.common.key.js" ></script>
+    <script src="RGraph/libraries/RGraph.hbar.js" ></script>
+    <script src="RGraph/libraries/RGraph.bar.js" ></script>
+    <script src="RGraph/libraries/RGraph.pie.js"></script>
+    <script src="RGraph/libraries/RGraph.bipolar.js"></script>
+    <script src="RGraph/libraries/RGraph.drawing.rect.js"></script>
+    
+    <!-- SOPORTE PARA IMPORTACIÓN DE FICHEROS EXCEL -->
+
+    <script lang="javascript" src="dist/xlsx.core.min.js"></script>
+
+    <!-- uncomment the next line here and in xlsxworker.js for encoding support -->
+    <!--<script src="dist/cpexcel.js"></script>-->
+    
+    <script src="shim.js"></script>
+    <script src="jszip.js"></script>
+    <script src="xlsx.js"></script>
+    
+    <!-- uncomment the next line here and in xlsxworker.js for ODS support -->
+    <script src="ods.js"></script>  
+
+
+    <title>Cisco Report 2015</title>
+    <script>
+        //*********************************************************************************************
+        // DECLARACION DE VARIABLE GLOBALES (se utilizan para el filtrado de fechas)
+        //      - inicioFY: fecha del primer día del FY. OJO, en JavaScript, el mes '6' corresponde a Julio, pues Enero es el mes '0'
+        //      - TablaDiaFY:  array con la traducción de cada día del FY en formato FY15-Q1-M1-W1-d
+        //      - TablaFechasWeek: array con la traducción de cada semana del FY en formato FY15-Q1-M1-W1
+        //      - TablaFechasMonth: array con la traducción de cada mes del FY en formato FY15-Q1-M1
+        //      - TablaFechasQuarter: array con la traducción de cada trimestre del FY en formato FY15-Q1
+        //      - TablaFechasFY: array con la traducción de los FY en formato FY15
+        //*********************************************************************************************
+        var añoRaro = true;
+        var tablaPrincipal;
+        var oTable;
+        var top10partners;
+        var cambiaEscala = false;
+        var inicioFY = new Date(2014,6,27,0,0,0,0); //OJO, en JavaScript, el mes '6' corresponde a Julio, pues Enero es el mes '0'
+        var FYactual = "FY15";
+        var iFYactual = parseInt(FYactual.substring(2,4));
+        var currentDate = new Date();
+        var day = currentDate.toLocaleDateString();
+        if (añoRaro)
+            iFYactual += parseInt((currentDate-inicioFY)/1000/60/60/24/371);
+        else
+            iFYactual += parseInt((currentDate-inicioFY)/1000/60/60/24/364);
+        FYactual="FY"+ iFYactual;
+        var periodoGrafica =FYactual;
+        var miFiltro = ["","","","",""];
+        
+        var seasonality = new Array(4);
+        seasonality = [0.205,0.25,0.26,0.285];
+        if (añoRaro)
+        {        
+            var TablaDiaFY = new Array(371);
+            TablaDiaFY =[FYactual+'-Q1-M1-W1-1',FYactual+'-Q1-M1-W1-2',FYactual+'-Q1-M1-W1-3',FYactual+'-Q1-M1-W1-4',FYactual+'-Q1-M1-W1-5',FYactual+'-Q1-M1-W1-6',FYactual+'-Q1-M1-W1-7',FYactual+'-Q1-M1-W2-1',FYactual+'-Q1-M1-W2-2',FYactual+'-Q1-M1-W2-3',FYactual+'-Q1-M1-W2-4',FYactual+'-Q1-M1-W2-5',FYactual+'-Q1-M1-W2-6',FYactual+'-Q1-M1-W2-7',FYactual+'-Q1-M1-W3-1',FYactual+'-Q1-M1-W3-2',FYactual+'-Q1-M1-W3-3',FYactual+'-Q1-M1-W3-4',FYactual+'-Q1-M1-W3-5',FYactual+'-Q1-M1-W3-6',FYactual+'-Q1-M1-W3-7',FYactual+'-Q1-M1-W4-1',FYactual+'-Q1-M1-W4-2',FYactual+'-Q1-M1-W4-3',FYactual+'-Q1-M1-W4-4',FYactual+'-Q1-M1-W4-5',FYactual+'-Q1-M1-W4-6',FYactual+'-Q1-M1-W4-7',FYactual+'-Q1-M2-W1-1',FYactual+'-Q1-M2-W1-2',FYactual+'-Q1-M2-W1-3',FYactual+'-Q1-M2-W1-4',FYactual+'-Q1-M2-W1-5',FYactual+'-Q1-M2-W1-6',FYactual+'-Q1-M2-W1-7',FYactual+'-Q1-M2-W2-1',FYactual+'-Q1-M2-W2-2',FYactual+'-Q1-M2-W2-3',FYactual+'-Q1-M2-W2-4',FYactual+'-Q1-M2-W2-5',FYactual+'-Q1-M2-W2-6',FYactual+'-Q1-M2-W2-7',FYactual+'-Q1-M2-W3-1',FYactual+'-Q1-M2-W3-2',FYactual+'-Q1-M2-W3-3',FYactual+'-Q1-M2-W3-4',FYactual+'-Q1-M2-W3-5',FYactual+'-Q1-M2-W3-6',FYactual+'-Q1-M2-W3-7',FYactual+'-Q1-M2-W4-1',FYactual+'-Q1-M2-W4-2',FYactual+'-Q1-M2-W4-3',FYactual+'-Q1-M2-W4-4',FYactual+'-Q1-M2-W4-5',FYactual+'-Q1-M2-W4-6',FYactual+'-Q1-M2-W4-7',FYactual+'-Q1-M3-W1-1',FYactual+'-Q1-M3-W1-2',FYactual+'-Q1-M3-W1-3',FYactual+'-Q1-M3-W1-4',FYactual+'-Q1-M3-W1-5',FYactual+'-Q1-M3-W1-6',FYactual+'-Q1-M3-W1-7',FYactual+'-Q1-M3-W2-1',FYactual+'-Q1-M3-W2-2',FYactual+'-Q1-M3-W2-3',FYactual+'-Q1-M3-W2-4',FYactual+'-Q1-M3-W2-5',FYactual+'-Q1-M3-W2-6',FYactual+'-Q1-M3-W2-7',FYactual+'-Q1-M3-W3-1',FYactual+'-Q1-M3-W3-2',FYactual+'-Q1-M3-W3-3',FYactual+'-Q1-M3-W3-4',FYactual+'-Q1-M3-W3-5',FYactual+'-Q1-M3-W3-6',FYactual+'-Q1-M3-W3-7',FYactual+'-Q1-M3-W4-1',FYactual+'-Q1-M3-W4-2',FYactual+'-Q1-M3-W4-3',FYactual+'-Q1-M3-W4-4',FYactual+'-Q1-M3-W4-5',FYactual+'-Q1-M3-W4-6',FYactual+'-Q1-M3-W4-7',FYactual+'-Q1-M3-W5-1',FYactual+'-Q1-M3-W5-2',FYactual+'-Q1-M3-W5-3',FYactual+'-Q1-M3-W5-4',FYactual+'-Q1-M3-W5-5',FYactual+'-Q1-M3-W5-6',FYactual+'-Q1-M3-W5-7',FYactual+'-Q2-M1-W1-1',FYactual+'-Q2-M1-W1-2',FYactual+'-Q2-M1-W1-3',FYactual+'-Q2-M1-W1-4',FYactual+'-Q2-M1-W1-5',FYactual+'-Q2-M1-W1-6',FYactual+'-Q2-M1-W1-7',FYactual+'-Q2-M1-W2-1',FYactual+'-Q2-M1-W2-2',FYactual+'-Q2-M1-W2-3',FYactual+'-Q2-M1-W2-4',FYactual+'-Q2-M1-W2-5',FYactual+'-Q2-M1-W2-6',FYactual+'-Q2-M1-W2-7',FYactual+'-Q2-M1-W3-1',FYactual+'-Q2-M1-W3-2',FYactual+'-Q2-M1-W3-3',FYactual+'-Q2-M1-W3-4',FYactual+'-Q2-M1-W3-5',FYactual+'-Q2-M1-W3-6',FYactual+'-Q2-M1-W3-7',FYactual+'-Q2-M1-W4-1',FYactual+'-Q2-M1-W4-2',FYactual+'-Q2-M1-W4-3',FYactual+'-Q2-M1-W4-4',FYactual+'-Q2-M1-W4-5',FYactual+'-Q2-M1-W4-6',FYactual+'-Q2-M1-W4-7',FYactual+'-Q2-M2-W1-1',FYactual+'-Q2-M2-W1-2',FYactual+'-Q2-M2-W1-3',FYactual+'-Q2-M2-W1-4',FYactual+'-Q2-M2-W1-5',FYactual+'-Q2-M2-W1-6',FYactual+'-Q2-M2-W1-7',FYactual+'-Q2-M2-W2-1',FYactual+'-Q2-M2-W2-2',FYactual+'-Q2-M2-W2-3',FYactual+'-Q2-M2-W2-4',FYactual+'-Q2-M2-W2-5',FYactual+'-Q2-M2-W2-6',FYactual+'-Q2-M2-W2-7',FYactual+'-Q2-M2-W3-1',FYactual+'-Q2-M2-W3-2',FYactual+'-Q2-M2-W3-3',FYactual+'-Q2-M2-W3-4',FYactual+'-Q2-M2-W3-5',FYactual+'-Q2-M2-W3-6',FYactual+'-Q2-M2-W3-7',FYactual+'-Q2-M2-W4-1',FYactual+'-Q2-M2-W4-2',FYactual+'-Q2-M2-W4-3',FYactual+'-Q2-M2-W4-4',FYactual+'-Q2-M2-W4-5',FYactual+'-Q2-M2-W4-6',FYactual+'-Q2-M2-W4-7',FYactual+'-Q2-M3-W1-1',FYactual+'-Q2-M3-W1-2',FYactual+'-Q2-M3-W1-3',FYactual+'-Q2-M3-W1-4',FYactual+'-Q2-M3-W1-5',FYactual+'-Q2-M3-W1-6',FYactual+'-Q2-M3-W1-7',FYactual+'-Q2-M3-W2-1',FYactual+'-Q2-M3-W2-2',FYactual+'-Q2-M3-W2-3',FYactual+'-Q2-M3-W2-4',FYactual+'-Q2-M3-W2-5',FYactual+'-Q2-M3-W2-6',FYactual+'-Q2-M3-W2-7',FYactual+'-Q2-M3-W3-1',FYactual+'-Q2-M3-W3-2',FYactual+'-Q2-M3-W3-3',FYactual+'-Q2-M3-W3-4',FYactual+'-Q2-M3-W3-5',FYactual+'-Q2-M3-W3-6',FYactual+'-Q2-M3-W3-7',FYactual+'-Q2-M3-W4-1',FYactual+'-Q2-M3-W4-2',FYactual+'-Q2-M3-W4-3',FYactual+'-Q2-M3-W4-4',FYactual+'-Q2-M3-W4-5',FYactual+'-Q2-M3-W4-6',FYactual+'-Q2-M3-W4-7',FYactual+'-Q2-M3-W5-1',FYactual+'-Q2-M3-W5-2',FYactual+'-Q2-M3-W5-3',FYactual+'-Q2-M3-W5-4',FYactual+'-Q2-M3-W5-5',FYactual+'-Q2-M3-W5-6',FYactual+'-Q2-M3-W5-7',FYactual+'-Q3-M1-W1-1',FYactual+'-Q3-M1-W1-2',FYactual+'-Q3-M1-W1-3',FYactual+'-Q3-M1-W1-4',FYactual+'-Q3-M1-W1-5',FYactual+'-Q3-M1-W1-6',FYactual+'-Q3-M1-W1-7',FYactual+'-Q3-M1-W2-1',FYactual+'-Q3-M1-W2-2',FYactual+'-Q3-M1-W2-3',FYactual+'-Q3-M1-W2-4',FYactual+'-Q3-M1-W2-5',FYactual+'-Q3-M1-W2-6',FYactual+'-Q3-M1-W2-7',FYactual+'-Q3-M1-W3-1',FYactual+'-Q3-M1-W3-2',FYactual+'-Q3-M1-W3-3',FYactual+'-Q3-M1-W3-4',FYactual+'-Q3-M1-W3-5',FYactual+'-Q3-M1-W3-6',FYactual+'-Q3-M1-W3-7',FYactual+'-Q3-M1-W4-1',FYactual+'-Q3-M1-W4-2',FYactual+'-Q3-M1-W4-3',FYactual+'-Q3-M1-W4-4',FYactual+'-Q3-M1-W4-5',FYactual+'-Q3-M1-W4-6',FYactual+'-Q3-M1-W4-7',FYactual+'-Q3-M1-W5-1',FYactual+'-Q3-M1-W5-2',FYactual+'-Q3-M1-W5-3',FYactual+'-Q3-M1-W5-4',FYactual+'-Q3-M1-W5-5',FYactual+'-Q3-M1-W5-6',FYactual+'-Q3-M1-W5-7',FYactual+'-Q3-M2-W1-1',FYactual+'-Q3-M2-W1-2',FYactual+'-Q3-M2-W1-3',FYactual+'-Q3-M2-W1-4',FYactual+'-Q3-M2-W1-5',FYactual+'-Q3-M2-W1-6',FYactual+'-Q3-M2-W1-7',FYactual+'-Q3-M2-W2-1',FYactual+'-Q3-M2-W2-2',FYactual+'-Q3-M2-W2-3',FYactual+'-Q3-M2-W2-4',FYactual+'-Q3-M2-W2-5',FYactual+'-Q3-M2-W2-6',FYactual+'-Q3-M2-W2-7',FYactual+'-Q3-M2-W3-1',FYactual+'-Q3-M2-W3-2',FYactual+'-Q3-M2-W3-3',FYactual+'-Q3-M2-W3-4',FYactual+'-Q3-M2-W3-5',FYactual+'-Q3-M2-W3-6',FYactual+'-Q3-M2-W3-7',FYactual+'-Q3-M2-W4-1',FYactual+'-Q3-M2-W4-2',FYactual+'-Q3-M2-W4-3',FYactual+'-Q3-M2-W4-4',FYactual+'-Q3-M2-W4-5',FYactual+'-Q3-M2-W4-6',FYactual+'-Q3-M2-W4-7',FYactual+'-Q3-M3-W1-1',FYactual+'-Q3-M3-W1-2',FYactual+'-Q3-M3-W1-3',FYactual+'-Q3-M3-W1-4',FYactual+'-Q3-M3-W1-5',FYactual+'-Q3-M3-W1-6',FYactual+'-Q3-M3-W1-7',FYactual+'-Q3-M3-W2-1',FYactual+'-Q3-M3-W2-2',FYactual+'-Q3-M3-W2-3',FYactual+'-Q3-M3-W2-4',FYactual+'-Q3-M3-W2-5',FYactual+'-Q3-M3-W2-6',FYactual+'-Q3-M3-W2-7',FYactual+'-Q3-M3-W3-1',FYactual+'-Q3-M3-W3-2',FYactual+'-Q3-M3-W3-3',FYactual+'-Q3-M3-W3-4',FYactual+'-Q3-M3-W3-5',FYactual+'-Q3-M3-W3-6',FYactual+'-Q3-M3-W3-7',FYactual+'-Q3-M3-W4-1',FYactual+'-Q3-M3-W4-2',FYactual+'-Q3-M3-W4-3',FYactual+'-Q3-M3-W4-4',FYactual+'-Q3-M3-W4-5',FYactual+'-Q3-M3-W4-6',FYactual+'-Q3-M3-W4-7',FYactual+'-Q3-M3-W5-1',FYactual+'-Q3-M3-W5-2',FYactual+'-Q3-M3-W5-3',FYactual+'-Q3-M3-W5-4',FYactual+'-Q3-M3-W5-5',FYactual+'-Q3-M3-W5-6',FYactual+'-Q3-M3-W5-7',FYactual+'-Q4-M1-W1-1',FYactual+'-Q4-M1-W1-2',FYactual+'-Q4-M1-W1-3',FYactual+'-Q4-M1-W1-4',FYactual+'-Q4-M1-W1-5',FYactual+'-Q4-M1-W1-6',FYactual+'-Q4-M1-W1-7',FYactual+'-Q4-M1-W2-1',FYactual+'-Q4-M1-W2-2',FYactual+'-Q4-M1-W2-3',FYactual+'-Q4-M1-W2-4',FYactual+'-Q4-M1-W2-5',FYactual+'-Q4-M1-W2-6',FYactual+'-Q4-M1-W2-7',FYactual+'-Q4-M1-W3-1',FYactual+'-Q4-M1-W3-2',FYactual+'-Q4-M1-W3-3',FYactual+'-Q4-M1-W3-4',FYactual+'-Q4-M1-W3-5',FYactual+'-Q4-M1-W3-6',FYactual+'-Q4-M1-W3-7',FYactual+'-Q4-M1-W4-1',FYactual+'-Q4-M1-W4-2',FYactual+'-Q4-M1-W4-3',FYactual+'-Q4-M1-W4-4',FYactual+'-Q4-M1-W4-5',FYactual+'-Q4-M1-W4-6',FYactual+'-Q4-M1-W4-7',FYactual+'-Q4-M2-W1-1',FYactual+'-Q4-M2-W1-2',FYactual+'-Q4-M2-W1-3',FYactual+'-Q4-M2-W1-4',FYactual+'-Q4-M2-W1-5',FYactual+'-Q4-M2-W1-6',FYactual+'-Q4-M2-W1-7',FYactual+'-Q4-M2-W2-1',FYactual+'-Q4-M2-W2-2',FYactual+'-Q4-M2-W2-3',FYactual+'-Q4-M2-W2-4',FYactual+'-Q4-M2-W2-5',FYactual+'-Q4-M2-W2-6',FYactual+'-Q4-M2-W2-7',FYactual+'-Q4-M2-W3-1',FYactual+'-Q4-M2-W3-2',FYactual+'-Q4-M2-W3-3',FYactual+'-Q4-M2-W3-4',FYactual+'-Q4-M2-W3-5',FYactual+'-Q4-M2-W3-6',FYactual+'-Q4-M2-W3-7',FYactual+'-Q4-M2-W4-1',FYactual+'-Q4-M2-W4-2',FYactual+'-Q4-M2-W4-3',FYactual+'-Q4-M2-W4-4',FYactual+'-Q4-M2-W4-5',FYactual+'-Q4-M2-W4-6',FYactual+'-Q4-M2-W4-7',FYactual+'-Q4-M3-W1-1',FYactual+'-Q4-M3-W1-2',FYactual+'-Q4-M3-W1-3',FYactual+'-Q4-M3-W1-4',FYactual+'-Q4-M3-W1-5',FYactual+'-Q4-M3-W1-6',FYactual+'-Q4-M3-W1-7',FYactual+'-Q4-M3-W2-1',FYactual+'-Q4-M3-W2-2',FYactual+'-Q4-M3-W2-3',FYactual+'-Q4-M3-W2-4',FYactual+'-Q4-M3-W2-5',FYactual+'-Q4-M3-W2-6',FYactual+'-Q4-M3-W2-7',FYactual+'-Q4-M3-W3-1',FYactual+'-Q4-M3-W3-2',FYactual+'-Q4-M3-W3-3',FYactual+'-Q4-M3-W3-4',FYactual+'-Q4-M3-W3-5',FYactual+'-Q4-M3-W3-6',FYactual+'-Q4-M3-W3-7',FYactual+'-Q4-M3-W4-1',FYactual+'-Q4-M3-W4-2',FYactual+'-Q4-M3-W4-3',FYactual+'-Q4-M3-W4-4',FYactual+'-Q4-M3-W4-5',FYactual+'-Q4-M3-W4-6',FYactual+'-Q4-M3-W4-7',FYactual+'-Q4-M3-W5-1',FYactual+'-Q4-M3-W5-2',FYactual+'-Q4-M3-W5-3',FYactual+'-Q4-M3-W5-4',FYactual+'-Q4-M3-W5-5',FYactual+'-Q4-M3-W5-6',FYactual+'-Q4-M3-W5-7'];
+        }
+            else
+        {        
+            var TablaDiaFY = new Array(364);
+            TablaDiaFY =[FYactual+'-Q1-M1-W1-1',FYactual+'-Q1-M1-W1-2',FYactual+'-Q1-M1-W1-3',FYactual+'-Q1-M1-W1-4',FYactual+'-Q1-M1-W1-5',FYactual+'-Q1-M1-W1-6',FYactual+'-Q1-M1-W1-7',FYactual+'-Q1-M1-W2-1',FYactual+'-Q1-M1-W2-2',FYactual+'-Q1-M1-W2-3',FYactual+'-Q1-M1-W2-4',FYactual+'-Q1-M1-W2-5',FYactual+'-Q1-M1-W2-6',FYactual+'-Q1-M1-W2-7',FYactual+'-Q1-M1-W3-1',FYactual+'-Q1-M1-W3-2',FYactual+'-Q1-M1-W3-3',FYactual+'-Q1-M1-W3-4',FYactual+'-Q1-M1-W3-5',FYactual+'-Q1-M1-W3-6',FYactual+'-Q1-M1-W3-7',FYactual+'-Q1-M1-W4-1',FYactual+'-Q1-M1-W4-2',FYactual+'-Q1-M1-W4-3',FYactual+'-Q1-M1-W4-4',FYactual+'-Q1-M1-W4-5',FYactual+'-Q1-M1-W4-6',FYactual+'-Q1-M1-W4-7',FYactual+'-Q1-M2-W1-1',FYactual+'-Q1-M2-W1-2',FYactual+'-Q1-M2-W1-3',FYactual+'-Q1-M2-W1-4',FYactual+'-Q1-M2-W1-5',FYactual+'-Q1-M2-W1-6',FYactual+'-Q1-M2-W1-7',FYactual+'-Q1-M2-W2-1',FYactual+'-Q1-M2-W2-2',FYactual+'-Q1-M2-W2-3',FYactual+'-Q1-M2-W2-4',FYactual+'-Q1-M2-W2-5',FYactual+'-Q1-M2-W2-6',FYactual+'-Q1-M2-W2-7',FYactual+'-Q1-M2-W3-1',FYactual+'-Q1-M2-W3-2',FYactual+'-Q1-M2-W3-3',FYactual+'-Q1-M2-W3-4',FYactual+'-Q1-M2-W3-5',FYactual+'-Q1-M2-W3-6',FYactual+'-Q1-M2-W3-7',FYactual+'-Q1-M2-W4-1',FYactual+'-Q1-M2-W4-2',FYactual+'-Q1-M2-W4-3',FYactual+'-Q1-M2-W4-4',FYactual+'-Q1-M2-W4-5',FYactual+'-Q1-M2-W4-6',FYactual+'-Q1-M2-W4-7',FYactual+'-Q1-M3-W1-1',FYactual+'-Q1-M3-W1-2',FYactual+'-Q1-M3-W1-3',FYactual+'-Q1-M3-W1-4',FYactual+'-Q1-M3-W1-5',FYactual+'-Q1-M3-W1-6',FYactual+'-Q1-M3-W1-7',FYactual+'-Q1-M3-W2-1',FYactual+'-Q1-M3-W2-2',FYactual+'-Q1-M3-W2-3',FYactual+'-Q1-M3-W2-4',FYactual+'-Q1-M3-W2-5',FYactual+'-Q1-M3-W2-6',FYactual+'-Q1-M3-W2-7',FYactual+'-Q1-M3-W3-1',FYactual+'-Q1-M3-W3-2',FYactual+'-Q1-M3-W3-3',FYactual+'-Q1-M3-W3-4',FYactual+'-Q1-M3-W3-5',FYactual+'-Q1-M3-W3-6',FYactual+'-Q1-M3-W3-7',FYactual+'-Q1-M3-W4-1',FYactual+'-Q1-M3-W4-2',FYactual+'-Q1-M3-W4-3',FYactual+'-Q1-M3-W4-4',FYactual+'-Q1-M3-W4-5',FYactual+'-Q1-M3-W4-6',FYactual+'-Q1-M3-W4-7',FYactual+'-Q1-M3-W5-1',FYactual+'-Q1-M3-W5-2',FYactual+'-Q1-M3-W5-3',FYactual+'-Q1-M3-W5-4',FYactual+'-Q1-M3-W5-5',FYactual+'-Q1-M3-W5-6',FYactual+'-Q1-M3-W5-7',FYactual+'-Q2-M1-W1-1',FYactual+'-Q2-M1-W1-2',FYactual+'-Q2-M1-W1-3',FYactual+'-Q2-M1-W1-4',FYactual+'-Q2-M1-W1-5',FYactual+'-Q2-M1-W1-6',FYactual+'-Q2-M1-W1-7',FYactual+'-Q2-M1-W2-1',FYactual+'-Q2-M1-W2-2',FYactual+'-Q2-M1-W2-3',FYactual+'-Q2-M1-W2-4',FYactual+'-Q2-M1-W2-5',FYactual+'-Q2-M1-W2-6',FYactual+'-Q2-M1-W2-7',FYactual+'-Q2-M1-W3-1',FYactual+'-Q2-M1-W3-2',FYactual+'-Q2-M1-W3-3',FYactual+'-Q2-M1-W3-4',FYactual+'-Q2-M1-W3-5',FYactual+'-Q2-M1-W3-6',FYactual+'-Q2-M1-W3-7',FYactual+'-Q2-M1-W4-1',FYactual+'-Q2-M1-W4-2',FYactual+'-Q2-M1-W4-3',FYactual+'-Q2-M1-W4-4',FYactual+'-Q2-M1-W4-5',FYactual+'-Q2-M1-W4-6',FYactual+'-Q2-M1-W4-7',FYactual+'-Q2-M2-W1-1',FYactual+'-Q2-M2-W1-2',FYactual+'-Q2-M2-W1-3',FYactual+'-Q2-M2-W1-4',FYactual+'-Q2-M2-W1-5',FYactual+'-Q2-M2-W1-6',FYactual+'-Q2-M2-W1-7',FYactual+'-Q2-M2-W2-1',FYactual+'-Q2-M2-W2-2',FYactual+'-Q2-M2-W2-3',FYactual+'-Q2-M2-W2-4',FYactual+'-Q2-M2-W2-5',FYactual+'-Q2-M2-W2-6',FYactual+'-Q2-M2-W2-7',FYactual+'-Q2-M2-W3-1',FYactual+'-Q2-M2-W3-2',FYactual+'-Q2-M2-W3-3',FYactual+'-Q2-M2-W3-4',FYactual+'-Q2-M2-W3-5',FYactual+'-Q2-M2-W3-6',FYactual+'-Q2-M2-W3-7',FYactual+'-Q2-M2-W4-1',FYactual+'-Q2-M2-W4-2',FYactual+'-Q2-M2-W4-3',FYactual+'-Q2-M2-W4-4',FYactual+'-Q2-M2-W4-5',FYactual+'-Q2-M2-W4-6',FYactual+'-Q2-M2-W4-7',FYactual+'-Q2-M3-W1-1',FYactual+'-Q2-M3-W1-2',FYactual+'-Q2-M3-W1-3',FYactual+'-Q2-M3-W1-4',FYactual+'-Q2-M3-W1-5',FYactual+'-Q2-M3-W1-6',FYactual+'-Q2-M3-W1-7',FYactual+'-Q2-M3-W2-1',FYactual+'-Q2-M3-W2-2',FYactual+'-Q2-M3-W2-3',FYactual+'-Q2-M3-W2-4',FYactual+'-Q2-M3-W2-5',FYactual+'-Q2-M3-W2-6',FYactual+'-Q2-M3-W2-7',FYactual+'-Q2-M3-W3-1',FYactual+'-Q2-M3-W3-2',FYactual+'-Q2-M3-W3-3',FYactual+'-Q2-M3-W3-4',FYactual+'-Q2-M3-W3-5',FYactual+'-Q2-M3-W3-6',FYactual+'-Q2-M3-W3-7',FYactual+'-Q2-M3-W4-1',FYactual+'-Q2-M3-W4-2',FYactual+'-Q2-M3-W4-3',FYactual+'-Q2-M3-W4-4',FYactual+'-Q2-M3-W4-5',FYactual+'-Q2-M3-W4-6',FYactual+'-Q2-M3-W4-7',FYactual+'-Q2-M3-W5-1',FYactual+'-Q2-M3-W5-2',FYactual+'-Q2-M3-W5-3',FYactual+'-Q2-M3-W5-4',FYactual+'-Q2-M3-W5-5',FYactual+'-Q2-M3-W5-6',FYactual+'-Q2-M3-W5-7',FYactual+'-Q3-M1-W1-1',FYactual+'-Q3-M1-W1-2',FYactual+'-Q3-M1-W1-3',FYactual+'-Q3-M1-W1-4',FYactual+'-Q3-M1-W1-5',FYactual+'-Q3-M1-W1-6',FYactual+'-Q3-M1-W1-7',FYactual+'-Q3-M1-W2-1',FYactual+'-Q3-M1-W2-2',FYactual+'-Q3-M1-W2-3',FYactual+'-Q3-M1-W2-4',FYactual+'-Q3-M1-W2-5',FYactual+'-Q3-M1-W2-6',FYactual+'-Q3-M1-W2-7',FYactual+'-Q3-M1-W3-1',FYactual+'-Q3-M1-W3-2',FYactual+'-Q3-M1-W3-3',FYactual+'-Q3-M1-W3-4',FYactual+'-Q3-M1-W3-5',FYactual+'-Q3-M1-W3-6',FYactual+'-Q3-M1-W3-7',FYactual+'-Q3-M1-W4-1',FYactual+'-Q3-M1-W4-2',FYactual+'-Q3-M1-W4-3',FYactual+'-Q3-M1-W4-4',FYactual+'-Q3-M1-W4-5',FYactual+'-Q3-M1-W4-6',FYactual+'-Q3-M1-W4-7',FYactual+'-Q3-M2-W1-1',FYactual+'-Q3-M2-W1-2',FYactual+'-Q3-M2-W1-3',FYactual+'-Q3-M2-W1-4',FYactual+'-Q3-M2-W1-5',FYactual+'-Q3-M2-W1-6',FYactual+'-Q3-M2-W1-7',FYactual+'-Q3-M2-W2-1',FYactual+'-Q3-M2-W2-2',FYactual+'-Q3-M2-W2-3',FYactual+'-Q3-M2-W2-4',FYactual+'-Q3-M2-W2-5',FYactual+'-Q3-M2-W2-6',FYactual+'-Q3-M2-W2-7',FYactual+'-Q3-M2-W3-1',FYactual+'-Q3-M2-W3-2',FYactual+'-Q3-M2-W3-3',FYactual+'-Q3-M2-W3-4',FYactual+'-Q3-M2-W3-5',FYactual+'-Q3-M2-W3-6',FYactual+'-Q3-M2-W3-7',FYactual+'-Q3-M2-W4-1',FYactual+'-Q3-M2-W4-2',FYactual+'-Q3-M2-W4-3',FYactual+'-Q3-M2-W4-4',FYactual+'-Q3-M2-W4-5',FYactual+'-Q3-M2-W4-6',FYactual+'-Q3-M2-W4-7',FYactual+'-Q3-M3-W1-1',FYactual+'-Q3-M3-W1-2',FYactual+'-Q3-M3-W1-3',FYactual+'-Q3-M3-W1-4',FYactual+'-Q3-M3-W1-5',FYactual+'-Q3-M3-W1-6',FYactual+'-Q3-M3-W1-7',FYactual+'-Q3-M3-W2-1',FYactual+'-Q3-M3-W2-2',FYactual+'-Q3-M3-W2-3',FYactual+'-Q3-M3-W2-4',FYactual+'-Q3-M3-W2-5',FYactual+'-Q3-M3-W2-6',FYactual+'-Q3-M3-W2-7',FYactual+'-Q3-M3-W3-1',FYactual+'-Q3-M3-W3-2',FYactual+'-Q3-M3-W3-3',FYactual+'-Q3-M3-W3-4',FYactual+'-Q3-M3-W3-5',FYactual+'-Q3-M3-W3-6',FYactual+'-Q3-M3-W3-7',FYactual+'-Q3-M3-W4-1',FYactual+'-Q3-M3-W4-2',FYactual+'-Q3-M3-W4-3',FYactual+'-Q3-M3-W4-4',FYactual+'-Q3-M3-W4-5',FYactual+'-Q3-M3-W4-6',FYactual+'-Q3-M3-W4-7',FYactual+'-Q3-M3-W5-1',FYactual+'-Q3-M3-W5-2',FYactual+'-Q3-M3-W5-3',FYactual+'-Q3-M3-W5-4',FYactual+'-Q3-M3-W5-5',FYactual+'-Q3-M3-W5-6',FYactual+'-Q3-M3-W5-7',FYactual+'-Q4-M1-W1-1',FYactual+'-Q4-M1-W1-2',FYactual+'-Q4-M1-W1-3',FYactual+'-Q4-M1-W1-4',FYactual+'-Q4-M1-W1-5',FYactual+'-Q4-M1-W1-6',FYactual+'-Q4-M1-W1-7',FYactual+'-Q4-M1-W2-1',FYactual+'-Q4-M1-W2-2',FYactual+'-Q4-M1-W2-3',FYactual+'-Q4-M1-W2-4',FYactual+'-Q4-M1-W2-5',FYactual+'-Q4-M1-W2-6',FYactual+'-Q4-M1-W2-7',FYactual+'-Q4-M1-W3-1',FYactual+'-Q4-M1-W3-2',FYactual+'-Q4-M1-W3-3',FYactual+'-Q4-M1-W3-4',FYactual+'-Q4-M1-W3-5',FYactual+'-Q4-M1-W3-6',FYactual+'-Q4-M1-W3-7',FYactual+'-Q4-M1-W4-1',FYactual+'-Q4-M1-W4-2',FYactual+'-Q4-M1-W4-3',FYactual+'-Q4-M1-W4-4',FYactual+'-Q4-M1-W4-5',FYactual+'-Q4-M1-W4-6',FYactual+'-Q4-M1-W4-7',FYactual+'-Q4-M2-W1-1',FYactual+'-Q4-M2-W1-2',FYactual+'-Q4-M2-W1-3',FYactual+'-Q4-M2-W1-4',FYactual+'-Q4-M2-W1-5',FYactual+'-Q4-M2-W1-6',FYactual+'-Q4-M2-W1-7',FYactual+'-Q4-M2-W2-1',FYactual+'-Q4-M2-W2-2',FYactual+'-Q4-M2-W2-3',FYactual+'-Q4-M2-W2-4',FYactual+'-Q4-M2-W2-5',FYactual+'-Q4-M2-W2-6',FYactual+'-Q4-M2-W2-7',FYactual+'-Q4-M2-W3-1',FYactual+'-Q4-M2-W3-2',FYactual+'-Q4-M2-W3-3',FYactual+'-Q4-M2-W3-4',FYactual+'-Q4-M2-W3-5',FYactual+'-Q4-M2-W3-6',FYactual+'-Q4-M2-W3-7',FYactual+'-Q4-M2-W4-1',FYactual+'-Q4-M2-W4-2',FYactual+'-Q4-M2-W4-3',FYactual+'-Q4-M2-W4-4',FYactual+'-Q4-M2-W4-5',FYactual+'-Q4-M2-W4-6',FYactual+'-Q4-M2-W4-7',FYactual+'-Q4-M3-W1-1',FYactual+'-Q4-M3-W1-2',FYactual+'-Q4-M3-W1-3',FYactual+'-Q4-M3-W1-4',FYactual+'-Q4-M3-W1-5',FYactual+'-Q4-M3-W1-6',FYactual+'-Q4-M3-W1-7',FYactual+'-Q4-M3-W2-1',FYactual+'-Q4-M3-W2-2',FYactual+'-Q4-M3-W2-3',FYactual+'-Q4-M3-W2-4',FYactual+'-Q4-M3-W2-5',FYactual+'-Q4-M3-W2-6',FYactual+'-Q4-M3-W2-7',FYactual+'-Q4-M3-W3-1',FYactual+'-Q4-M3-W3-2',FYactual+'-Q4-M3-W3-3',FYactual+'-Q4-M3-W3-4',FYactual+'-Q4-M3-W3-5',FYactual+'-Q4-M3-W3-6',FYactual+'-Q4-M3-W3-7',FYactual+'-Q4-M3-W4-1',FYactual+'-Q4-M3-W4-2',FYactual+'-Q4-M3-W4-3',FYactual+'-Q4-M3-W4-4',FYactual+'-Q4-M3-W4-5',FYactual+'-Q4-M3-W4-6',FYactual+'-Q4-M3-W4-7',FYactual+'-Q4-M3-W5-1',FYactual+'-Q4-M3-W5-2',FYactual+'-Q4-M3-W5-3',FYactual+'-Q4-M3-W5-4',FYactual+'-Q4-M3-W5-5',FYactual+'-Q4-M3-W5-6',FYactual+'-Q4-M3-W5-7'];
+        }
+        if (añoRaro)
+        {  
+            var TablaFechasWeek = new Array(53); 
+            TablaFechasWeek = [FYactual+'-Q1-M1-W1',FYactual+'-Q1-M1-W2',FYactual+'-Q1-M1-W3',FYactual+'-Q1-M1-W4',FYactual+'-Q1-M2-W1',FYactual+'-Q1-M2-W2',FYactual+'-Q1-M2-W3',FYactual+'-Q1-M2-W4',FYactual+'-Q1-M3-W1',FYactual+'-Q1-M3-W2',FYactual+'-Q1-M3-W3',FYactual+'-Q1-M3-W4',FYactual+'-Q1-M3-W5',FYactual+'-Q2-M1-W1',FYactual+'-Q2-M1-W2',FYactual+'-Q2-M1-W3',FYactual+'-Q2-M1-W4',FYactual+'-Q2-M2-W1',FYactual+'-Q2-M2-W2',FYactual+'-Q2-M2-W3',FYactual+'-Q2-M2-W4',FYactual+'-Q2-M3-W1',FYactual+'-Q2-M3-W2',FYactual+'-Q2-M3-W3',FYactual+'-Q2-M3-W4',FYactual+'-Q2-M3-W5',FYactual+'-Q3-M1-W1',FYactual+'-Q3-M1-W2',FYactual+'-Q3-M1-W3',FYactual+'-Q3-M1-W4',FYactual+'-Q3-M1-W5',FYactual+'-Q3-M2-W1',FYactual+'-Q3-M2-W2',FYactual+'-Q3-M2-W3',FYactual+'-Q3-M2-W4',FYactual+'-Q3-M3-W1',FYactual+'-Q3-M3-W2',FYactual+'-Q3-M3-W3',FYactual+'-Q3-M3-W4',FYactual+'-Q3-M3-W5',FYactual+'-Q4-M1-W1',FYactual+'-Q4-M1-W2',FYactual+'-Q4-M1-W3',FYactual+'-Q4-M1-W4',FYactual+'-Q4-M2-W1',FYactual+'-Q4-M2-W2',FYactual+'-Q4-M2-W3',FYactual+'-Q4-M2-W4',FYactual+'-Q4-M3-W1',FYactual+'-Q4-M3-W2',FYactual+'-Q4-M3-W3',FYactual+'-Q4-M3-W4',FYactual+'-Q4-M3-W5'];
+        }
+        else
+        {
+            var TablaFechasWeek = new Array(52); 
+            TablaFechasWeek = [FYactual+'-Q1-M1-W1',FYactual+'-Q1-M1-W2',FYactual+'-Q1-M1-W3',FYactual+'-Q1-M1-W4',FYactual+'-Q1-M2-W1',FYactual+'-Q1-M2-W2',FYactual+'-Q1-M2-W3',FYactual+'-Q1-M2-W4',FYactual+'-Q1-M3-W1',FYactual+'-Q1-M3-W2',FYactual+'-Q1-M3-W3',FYactual+'-Q1-M3-W4',FYactual+'-Q1-M3-W5',FYactual+'-Q2-M1-W1',FYactual+'-Q2-M1-W2',FYactual+'-Q2-M1-W3',FYactual+'-Q2-M1-W4',FYactual+'-Q2-M2-W1',FYactual+'-Q2-M2-W2',FYactual+'-Q2-M2-W3',FYactual+'-Q2-M2-W4',FYactual+'-Q2-M3-W1',FYactual+'-Q2-M3-W2',FYactual+'-Q2-M3-W3',FYactual+'-Q2-M3-W4',FYactual+'-Q2-M3-W5',FYactual+'-Q3-M1-W1',FYactual+'-Q3-M1-W2',FYactual+'-Q3-M1-W3',FYactual+'-Q3-M1-W4',FYactual+'-Q3-M2-W1',FYactual+'-Q3-M2-W2',FYactual+'-Q3-M2-W3',FYactual+'-Q3-M2-W4',FYactual+'-Q3-M3-W1',FYactual+'-Q3-M3-W2',FYactual+'-Q3-M3-W3',FYactual+'-Q3-M3-W4',FYactual+'-Q3-M3-W5',FYactual+'-Q4-M1-W1',FYactual+'-Q4-M1-W2',FYactual+'-Q4-M1-W3',FYactual+'-Q4-M1-W4',FYactual+'-Q4-M2-W1',FYactual+'-Q4-M2-W2',FYactual+'-Q4-M2-W3',FYactual+'-Q4-M2-W4',FYactual+'-Q4-M3-W1',FYactual+'-Q4-M3-W2',FYactual+'-Q4-M3-W3',FYactual+'-Q4-M3-W4',FYactual+'-Q4-M3-W5'];
+        }
+        var TablaFechasMonth = new Array(12); 
+        TablaFechasMonth = [FYactual+'-Q1-M1',FYactual+'-Q1-M2',FYactual+'-Q1-M3',FYactual+'-Q2-M1',FYactual+'-Q2-M2',FYactual+'-Q2-M3',FYactual+'-Q3-M1',FYactual+'-Q3-M2',FYactual+'-Q3-M3',FYactual+'-Q4-M1',FYactual+'-Q4-M2',FYactual+'-Q4-M3'];
+        var TablaFechasQuarter = new Array(12); 
+        TablaFechasQuarter = ['FY'+(iFYactual-1)+'-Q1','FY'+(iFYactual-1)+'-Q2','FY'+(iFYactual-1)+'-Q3','FY'+(iFYactual-1)+'-Q4','FY'+(iFYactual)+'-Q1','FY'+(iFYactual)+'-Q2','FY'+(iFYactual)+'-Q3','FY'+(iFYactual)+'-Q4','FY'+(iFYactual+1)+'-Q1','FY'+(iFYactual+1)+'-Q2','FY'+(iFYactual+1)+'-Q3','FY'+(iFYactual+1)+'-Q4'];
+        var TablaFechasFY = new Array(12); 
+        TablaFechasFY = ['FY'+(iFYactual-5),'FY'+(iFYactual-4),'FY'+(iFYactual-3),'FY'+(iFYactual-2),'FY'+(iFYactual-1),'FY'+(iFYactual),'FY'+(iFYactual+1),'FY'+(iFYactual+2),'FY'+(iFYactual+3),'FY'+(iFYactual+4),'FY'+(iFYactual+5),'FY'+(iFYactual+6)];
+        //*********************************************************************************************
+        // DECLARACION DE VARIABLE GLOBALES (datos financieros)
+        //      - bookings:  total de 'bookings' una vez filtrada la tabla
+        //      - commit: total de 'commit' una vez filtrada la tabla
+        //      - upside:  total de 'upside' una vez filtrada la tabla
+        //      - nf: total de 'Not Forecastable' una vez filtrada la tabla
+        //      - target: target según periodo, SCMS y tecnología.
+        //*********************************************************************************************
+        var iaas = 0;
+        var bookings = 0;
+        var commit = 0;
+        var upside = 0;
+        var nf = 0;
+        var target = 110330240;
+
+        //*********************************************************************************************
+        // DECLARACION DE VARIABLE GLOBALES (gráfica)
+        //      - hbar:  objeto gráfica
+        //      - numberOfClicks: actualmente no se utiliza
+        //      - escala:  nº de divisiones en el eje horizontal de la gráfica
+        //      - porcentage_max: valor máximo del eje horizontal de la gráfica (en el momento inicial)
+        //*********************************************************************************************
+        var hbar;
+        var hbar1;
+        var hbar2;
+        var bar1;
+        var barCOM1;
+        var pie1;
+        var biPolar1;
+        var numberOfClicks = 0;
+        var escala = 4;
+        var escala2 = 4;
+        var escala4 = 4;
+        var escala5 = 4;
+        var escala6 = 4;
+        var porcentage_max = 200;
+        var porcentage_max2 = 200;
+        var porcentage_max4 = 200;
+        var porcentage_max5 = 200;
+        var porcentage_max6 = 200;
+        
+//**********************************************************************************************//
+// FUNCION INICIALIZADORA DE LA PAGINA                                                          //
+// La tabla que se modifica con el filtrado es la que tiene CLASS='display'                     //
+// Se configura en el TAG <INPUT> con el atributo "'data-table='display'"                       //
+// Cada vez que se escribe o borra un caracter, se actualiza la tabla                           //
+//**********************************************************************************************//
+        
+        addEvent('domready', function(){
+            
+            var miDP = new Picker.Date($$('.myInputDP'), {
+                pickerClass: 'datepicker_vista',
+                toggle: $$('.myLinkDP'),
+                togglesOnly: false,
+                format: '%b %d, %Y'
+            });
+            miDP.select(inicioFY);
+        });
+
+        $(document).ready(function () {
+            
+            inicioFY= new Date(2015,6,26,0,0,0,0);
+            
+            //document.getElementById("PrimerDia").value= inicioFY;
+            
+            CalculaFecha();
+            document.getElementById("btn_Q").classList.add('active');
+            document.getElementById("btn_Spain").classList.add('activeSCMS');
+            document.getElementById("btn_E").classList.add('activeSCMS');
+            document.getElementById("btn_P").classList.add('activeSCMS');
+            document.getElementById("btn_C").classList.add('activeSCMS');
+            document.getElementById("btn_Tech").classList.add('activeTech');
+            document.getElementById("btn_UCS").classList.add('activeTech');
+            document.getElementById("btn_N9K").classList.add('activeTech');
+            document.getElementById("btn_NEX").classList.add('activeTech');
+            document.getElementById("btn_MDS").classList.add('activeTech');
+            CambiaComboFecha();
+            miFiltro[0]="Servers";
+            miFiltro[1]="COM";
+            miFiltro[2]="";
+            miFiltro[3]="";
+            miFiltro[4]=document.getElementById('FechaSelect').value;
+            CalculaTarget();
+           
+            //if(typeof miXLSX === 'undefined' && typeof require !== 'undefined') 
+            //    miXLSX = require('xlsx');
+            
+            //var wb = miXLSX.readFile('aaaaaDC_FY16_2016_03_11.xlsx');
+            
+            //process_wb(wb);
+
+            
+            /* set up XMLHttpRequest */
+            var url = "_ultimo.xlsx";
+            var oReq = new XMLHttpRequest();
+            oReq.open("GET", url, true);
+            oReq.responseType = "arraybuffer";
+
+            oReq.onload = function(e) {
+                var arraybuffer = oReq.response;
+
+              /* convert data to binary string */
+                var data = new Uint8Array(arraybuffer);
+                var arr = new Array();
+                for(var i = 0; i != data.length; ++i) arr[i] = String.fromCharCode(data[i]);
+              var bstr = arr.join("");
+
+              /* Call XLSX */
+                var wb = XLSX.read(bstr, {type:"binary"});
+
+                process_wb(wb);
+            }
+
+            oReq.send();
+            
+            
+            
+            
+            grafica1();
+            grafica2();
+            grafica3();
+            grafica4();
+            grafica5();
+            grafica6();
+            graficaCOM1();
+            
+        });   
+
+        function grafica1(){
+        //alert("escala=" + escala + " target=" + target);
+            if ($("#chkIAAS").is(':checked')){
+                hbar = new RGraph.HBar({
+            id: 'cvs',
+            data: [[iaas*100/target,bookings*100/target,commit*100/target,upside*100/target,nf*100/target]],
+
+            options: {
+
+                'xlabels.count': escala,
+                numxticks: escala,
+                xmax: porcentage_max,
+                grouping: 'stacked',
+                linewidth: 1,
+                strokestyle: 'grey',
+                vmargin: 20,
+                labels: [periodoGrafica],
+                units: {
+                    post: '%'
+                },                    
+
+                key: {
+                    self: ['IaaS','Booked','Commit','Upside','Non Forecast'],
+                    position: {
+                        self: 'gutter',
+                        gutter: {
+                            boxed: false
+                        }
+                    },
+                    colors: ['#004400','#008800','#50cc50','#eeee55','#9b0000']
+                },
+                colors: [
+                        'Gradient(#004400:#004400)',     
+                        'Gradient(#008800:#008800)',
+                         'Gradient(#50cc50:#50cc50)',
+                         'Gradient(#eeee55:#eeee55)',
+                         'Gradient(#9b0000:#9b0000)',
+                        ],
+                background: {
+                    grid: {
+
+                        hlines: false,
+                        border: false,
+                        autofit: {
+                            numvlines: escala
+                        }
+                    }
+                },
+
+                tooltips: ['IaaS','Booked','Commit','Upside','Non Forecast']
+            }
+        }).on('draw', function (obj)
+        {
+
+                var valor=0; 
+                obj.context.fillStyle = 'white';
+                valor= Math.round(iaas/1000);
+                if (valor!=0)
+                RGraph.Text2(obj.context, {
+                   font:'Verdana',
+                   'size':7,
+                   'x':obj.coords[0][0] + (obj.coords[0][2] / 2),
+                   'y':obj.coords[0][1] + (obj.coords[0][3] / 2),
+                   'text':valor.toString() + " K" + "\n" + "(" + Math.round(100000*valor/target) + "%)",
+                   'valign':'center',
+                   'halign':'center'
+                  });  
+                obj.context.fillStyle = 'black';
+                valor= Math.round(bookings/1000);
+                if (valor!=0)
+                RGraph.Text2(obj.context, {
+                   font:'Verdana',
+                   'size':7,
+                   'x':obj.coords[1][0] + (obj.coords[1][2] / 2),
+                   'y':obj.coords[1][1] + (obj.coords[1][3] / 2),
+                   'text':valor.toString() + " K" + "\n" + "(" + Math.round(100000*valor/target) + "%)",
+                   'valign':'center',
+                   'halign':'center'
+                  });  
+                obj.context.fillStyle = 'black';
+                valor= Math.round(commit/1000);
+                if (valor!=0)
+                RGraph.Text2(obj.context, {
+                   font:'Verdana',
+                   'size':7,
+                   'x':obj.coords[2][0] + (obj.coords[2][2] / 2),
+                   'y':obj.coords[2][1] + (obj.coords[2][3] / 2),
+                   'text':valor.toString() + " K" + "\n" + "(" + Math.round(100000*valor/target) + "%)",
+                   'valign':'center',
+                   'halign':'center'
+                  });  
+                obj.context.fillStyle = 'black';
+                valor= Math.round(upside/1000);
+                if (valor!=0)
+                RGraph.Text2(obj.context, {
+                   font:'Verdana',
+                   'size':7,
+                   'x':obj.coords[3][0] + (obj.coords[3][2] / 2),
+                   'y':obj.coords[3][1] + (obj.coords[3][3] / 2),
+                   'text':valor.toString() + " K" + "\n" + "(" + Math.round(100000*valor/target) + "%)",
+                   'valign':'center',
+                   'halign':'center'
+                  });  
+                obj.context.fillStyle = 'white';
+                valor= Math.round(nf/1000);
+                if (valor!=0)
+                RGraph.Text2(obj.context, {
+                   font:'Verdana',
+                   'size':7,
+                   'x':obj.coords[4][0] + (obj.coords[4][2] / 2),
+                   'y':obj.coords[4][1] + (obj.coords[4][3] / 2),
+                   'text':valor.toString() + " K" + "\n" + "(" + Math.round(100000*valor/target) + "%)",
+                   'valign':'center',
+                   'halign':'center'
+                  });
+
+        }).grow().on('beforedraw', function (obj)
+    {
+        RGraph.clear(obj.canvas, 'white');
+    });
+            } else {
+                hbar = new RGraph.HBar({
+            id: 'cvs',
+            data: [[bookings*100/target,commit*100/target,upside*100/target,nf*100/target]],
+
+            options: {
+
+                'xlabels.count': escala,
+                numxticks: escala,
+                xmax: porcentage_max,
+                grouping: 'stacked',
+                linewidth: 1,
+                strokestyle: 'grey',
+                vmargin: 20,
+                labels: [periodoGrafica],
+                units: {
+                    post: '%'
+                },                    
+
+                key: {
+                    self: ['Booked','Commit','Upside','Non Forecast'],
+                    position: {
+                        self: 'gutter',
+                        gutter: {
+                            boxed: false
+                        }
+                    },
+                    colors: ['#008800','#50cc50','#eeee55','#9b0000']
+                },
+                colors: [    
+                        'Gradient(#008800:#008800)',
+                         'Gradient(#50cc50:#50cc50)',
+                         'Gradient(#eeee55:#eeee55)',
+                         'Gradient(#9b0000:#9b0000)',
+                        ],
+                background: {
+                    grid: {
+
+                        hlines: false,
+                        border: false,
+                        autofit: {
+                            numvlines: escala
+                        }
+                    }
+                },
+
+                tooltips: ['Booked','Commit','Upside','Non Forecast']
+            }
+        }).on('draw', function (obj)
+        {
+
+                var valor=0; 
+                
+                obj.context.fillStyle = 'black';
+                valor= Math.round(bookings/1000);
+                if (valor!=0)
+                RGraph.Text2(obj.context, {
+                   font:'Verdana',
+                   'size':7,
+                   'x':obj.coords[0][0] + (obj.coords[0][2] / 2),
+                   'y':obj.coords[0][1] + (obj.coords[0][3] / 2),
+                   'text':valor.toString() + " K" + "\n" + "(" + Math.round(100000*valor/target) + "%)",
+                   'valign':'center',
+                   'halign':'center'
+                  });  
+                obj.context.fillStyle = 'black';
+                valor= Math.round(commit/1000);
+                if (valor!=0)
+                RGraph.Text2(obj.context, {
+                   font:'Verdana',
+                   'size':7,
+                   'x':obj.coords[1][0] + (obj.coords[1][2] / 2),
+                   'y':obj.coords[1][1] + (obj.coords[1][3] / 2),
+                   'text':valor.toString() + " K" + "\n" + "(" + Math.round(100000*valor/target) + "%)",
+                   'valign':'center',
+                   'halign':'center'
+                  });  
+                obj.context.fillStyle = 'black';
+                valor= Math.round(upside/1000);
+                if (valor!=0)
+                RGraph.Text2(obj.context, {
+                   font:'Verdana',
+                   'size':7,
+                   'x':obj.coords[2][0] + (obj.coords[2][2] / 2),
+                   'y':obj.coords[2][1] + (obj.coords[2][3] / 2),
+                   'text':valor.toString() + " K" + "\n" + "(" + Math.round(100000*valor/target) + "%)",
+                   'valign':'center',
+                   'halign':'center'
+                  });  
+                obj.context.fillStyle = 'white';
+                valor= Math.round(nf/1000);
+                if (valor!=0)
+                RGraph.Text2(obj.context, {
+                   font:'Verdana',
+                   'size':7,
+                   'x':obj.coords[3][0] + (obj.coords[3][2] / 2),
+                   'y':obj.coords[3][1] + (obj.coords[3][3] / 2),
+                   'text':valor.toString() + " K" + "\n" + "(" + Math.round(100000*valor/target) + "%)",
+                   'valign':'center',
+                   'halign':'center'
+                  });
+
+        }).grow().on('beforedraw', function (obj)
+    {
+        RGraph.clear(obj.canvas, 'white');
+    })
+            }
+        }
+        
+        function grafica2(){
+            var datos;
+            var etiquetas;
+            var miPost;
+            if ($("#chkPorcentage").is(':checked'))
+                    miPost="%";
+                else
+                    miPost="K";
+           
+            if ($("#chkPeriodo").is(':checked'))
+            {
+                datos = desglosa_By_M("miTabla");
+                //alert(datos[1][3]);
+                for (var x = 0; x < 12; x++){
+                    for (var y = 0; y < 5; y++){
+                        if(datos[x][y]<0) {
+                            //alert(datos[1][3]);
+                            datos[x][y]= 0;
+                            var canvas  = document.getElementById("cvs2");
+                            var context = canvas.getContext('2d');
+                            var miposicion= x*5+4;
+                            var mix      = bar1.coords[miposicion][0];
+                            var miy      = bar1.coords[miposicion][1];
+                            var miwidth  = bar1.coords[miposicion][2];
+                            var miheight = bar1.coords[miposicion][3];
+                            //alert("pos("+mix+","+miy+") Valor=" + miheight );
+                            context.fillStyle = 'red';
+                            context.fillRect(mix, miy, miwidth+4, 100);
+                        }
+                    }
+                }
+                etiquetas = ["M\n1","M\n2","M\n3","M\n4","M\n5","M\n6","M\n7","M\n8","M\n9","M\n10","M\n11","M\n12"];
+            }
+            else
+            {
+                datos = desglosa_By_Q("miTabla");  
+                etiquetas = ["Q1","Q2","Q3","Q4"];
+            }
+            
+            
+            
+            
+            if ($("#chkIAAS").is(':checked')){
+                bar1 = new RGraph.Bar({
+            id: 'cvs2',
+            data: datos,
+
+            options: {
+
+                'ylabels.count': escala2,
+                numyticks: escala2,
+                numxticks: etiquetas.length,
+                ymax: porcentage_max2,
+               
+                grouping: 'stacked',
+                linewidth: 1,
+                strokestyle: 'grey',
+                hmargin: 5,
+                title: 'Evolución temporal',
+                labels: etiquetas,
+                gutter: {
+                    left: 60
+                },
+                units: {
+                    post: miPost
+                },                    
+
+               
+                colors: [     
+                    'Gradient(#9b0000:#9b0000)',
+                    'Gradient(#eeee55:#eeee55)',
+                    'Gradient(#50cc50:#50cc50)',
+                    'Gradient(#008800:#008800)',
+                    'Gradient(#004400:#004400)',
+                        ],
+                background: {
+                    grid: {
+
+                        hlines: false,
+                        border: false,
+                        autofit: {
+                            numvlines: etiquetas.length
+                        }
+                    }
+                },
+
+                tooltips: ['IaaS','Booked','Commit','Upside','Non Forecast']
+            }
+        }).on('draw', function (obj)
+        {
+
+                var valor; 
+                var num;
+                for (var x = 0; x < 5; x++){
+                    for (var y = 0; y < etiquetas.length; y++){
+                        if (x==4)
+                            obj.context.fillStyle = 'white';
+                        else
+                            obj.context.fillStyle = 'black';
+                        num= parseInt( datos[y][x]);
+                        if ($("#chkPorcentage").is(':checked'))
+                            valor=num.toString() + "%";
+                        else
+                             valor=num.toString() +"K";
+                        
+                        if (num!=0)
+                        RGraph.Text2(obj.context, {
+                           font:'Verdana',
+                           'size':7,
+                           'x':obj.coords[x+5*y][0] + (obj.coords[x+5*y][2] / 2),
+                           'y':obj.coords[x+5*y][1] + (obj.coords[x+5*y][3] / 2),
+                           'text':valor,
+                           'valign':'center',
+                           'halign':'center'
+                          });  
+                    }
+                }
+
+        }).draw()
+            } else {
+                bar1 = new RGraph.Bar({
+            id: 'cvs2',
+            data: datos,
+
+            options: {
+
+                'ylabels.count': escala2,
+                numyticks: escala2,
+                numxticks: etiquetas.length,
+                ymax: porcentage_max2,
+                
+                grouping: 'stacked',
+                linewidth: 1,
+                strokestyle: 'grey',
+                hmargin: 5,
+                title: 'Evolución temporal',
+                labels: etiquetas,
+                gutter: {
+                    left: 60
+                },
+                units: {
+                    post: miPost
+                },                    
+
+               
+                
+                colors: [     
+                    'Gradient(#9b0000:#9b0000)',
+                    'Gradient(#eeee55:#eeee55)',
+                    'Gradient(#50cc50:#50cc50)',
+                    'Gradient(#008800:#008800)',
+                    
+                        ],
+                background: {
+                    grid: {
+
+                        hlines: false,
+                        border: false,
+                        autofit: {
+                            numvlines: etiquetas.length
+                        }
+                    }
+                },
+
+                tooltips: ['Booked','Commit','Upside','Non Forecast']
+            }
+        }).on('draw', function (obj)
+        {
+
+                var valor; 
+                var num;
+                for (var x = 0; x < 5; x++){
+                    for (var y = 0; y < etiquetas.length; y++){
+                        if (x==4)
+                            obj.context.fillStyle = 'white';
+                        else
+                            obj.context.fillStyle = 'black';
+                        num= parseInt( datos[y][x]);
+                        if ($("#chkPorcentage").is(':checked'))
+                            valor=num.toString() + "%";
+                        else
+                             valor=num.toString() +"K";
+                        
+                        if (num!=0)
+                        RGraph.Text2(obj.context, {
+                           font:'Verdana',
+                           'size':7,
+                           'x':obj.coords[x+5*y][0] + (obj.coords[x+5*y][2] / 2),
+                           'y':obj.coords[x+5*y][1] + (obj.coords[x+5*y][3] / 2),
+                           'text':valor,
+                           'valign':'center',
+                           'halign':'center'
+                          });  
+                    }
+                }
+
+        }).draw();
+            }
+            
+        }
+        
+        function grafica3(){
+            var misdatos = desglosa_By_Tech("miTabla");
+            var etiquetas = ["UCS","N9K-ACI","NEXUS","MDS"];
+            
+            for (var x = 0; x < etiquetas.length; x++){
+                if ($("#chkPorcentage").is(':checked')){
+                    etiquetas[x] = etiquetas[x] + "\n" + parseInt(100*misdatos[x]/(misdatos[0]+misdatos[1]+misdatos[2]+misdatos[3])).toString() + "%";
+                }else{
+                   etiquetas[x] = etiquetas[x] + "\n" + parseInt(misdatos[x]/1000).toString() + "K";
+                }
+                if (misdatos[x] == 0)
+                    etiquetas[x] = "";
+
+            }
+            pie1 = new RGraph.Pie({
+                id: 'cvs3',
+                data: misdatos,
+                options: {
+
+                    labels: etiquetas,
+
+                    colors: ['#2299ff','#A0D300','#FFCD77','#EC8888'],
+                    strokestyle: 'white',
+                    linewidth: 0,
+                    shadow: {
+                        offsetx: 1,
+                        offsety: 1,
+                        blur: 2
+                    },
+                    gutter: {
+                        left: 50,
+                        top: 50
+                    },
+
+                    title: 'Distribución por Tecnología'
+
+                }
+            }).on('click', function (e, shape)
+            {
+                if (!pie1.get('exploded') || !pie1.get('exploded')[shape['index']]) {
+                    pie1.explodeSegment(shape['index'], 10);
+                }
+
+                e.stopPropagation();
+            }).on('mousemove', function (e, shape)
+            {
+                e.target.style.cursor = 'pointer';
+            }).draw();
+            // Add the window click listener that resets the Pie chart
+            window.onmousedown = function (e)
+            {
+                pie1.set('exploded', 1);
+                RGraph.redraw();
+            }
+             
+        }
+        
+        function grafica4(){
+        //alert("escala=" + escala + " target=" + target);
+            var partners = new Array(new Array());
+            var labels;
+            var decimales = 0;
+            partners = desglosa_By_Partner("miTabla");
+            
+            var top10partners = new Array();
+            var top10partners_importe = new Array();
+            //partners = [["",0],["",0],["",0],["",0],["",0],["",0],["",0],["",0],["",0],["",0]];
+            
+            if(partners==undefined) 
+            {
+                labels = ["partner1","partner2","partner3","partner4","partner5","partner6","partner7","partner8","partner9","partner10",]
+                partners = [["",0],["",0],["",0],["",0],["",0],["",0],["",0],["",0],["",0],["",0]];
+            }else{
+                    labels = cambiaNombrePartners(partners[0]);
+            }
+            if ($("#chkPorcentage").is(':checked'))
+            {
+                if (escala4 > 8) 
+                {
+                    decimales= 0;
+                }
+                else
+                {
+                    decimales= 2; 
+                }
+                miPost="%";
+            }
+            else
+            {
+                decimales= 0; 
+                miPost="K";
+            }
+           
+            //partners=["Internacional Perifericos y Memorias","IECI","EINZELNET","SCC","BT","TELEFONICA","TECNOCOM","ARYSE","INDRA","ERMESTEL"];
+            
+            var a=1;
+            //alert(partners[1]);
+            hbar1 = new RGraph.HBar({
+            id: 'cvs4',
+            data: partners[1],
+            
+            options: {
+                title: 'Top10 partners',
+                'xlabels.count': escala4,
+                numxticks: escala4,
+                xmax: porcentage_max4,
+                linewidth: 1,
+                strokestyle: 'grey',
+                vmargin: 1,
+                labels: labels,
+                units: {
+                    post: miPost
+                },                    
+                text: {
+                    size: 7
+                },   
+                gutter: {
+                    left: 100
+                },
+                scale: {
+                    decimals: decimales
+                },
+                colors: [
+                        'Gradient(#80dfdf:#3A89D3)',     
+                        'Gradient(#80dfdf:#3A89D3)',
+                         'Gradient(#80dfdf:#3A89D3)',
+                         'Gradient(#80dfdf:#3A89D3)',
+                         'Gradient(#80dfdf:#3A89D3)',
+                        'Gradient(#80dfdf:#3A89D3)',     
+                        'Gradient(#80dfdf:#3A89D3)',
+                         'Gradient(#80dfdf:#3A89D3)',
+                         'Gradient(#80dfdf:#3A89D3)',
+                         'Gradient(#80dfdf:#3A89D3)',
+                        ],
+                background: {
+                    grid: {
+
+                        hlines: false,
+                        border: false,
+                        autofit: {
+                            numvlines: escala4
+                        }
+                    }
+                },
+                
+            }
+        }).on('draw', function (obj)
+        {
+                var iValor=0;
+                var valor=""; 
+                
+                for (var n = 0; n < obj.coords.length; n++){
+                    obj.context.fillStyle = 'black';
+                    if ($("#chkPorcentage").is(':checked')){
+                        iValor = Math.round(partners[1][n]*100)/100;
+                        valor = iValor.toString() + " %";
+                    }
+                    else{
+                        iValor = partners[1][n];
+                        valor = iValor.toString() + " K";
+                    }
+                    if (iValor!=0)
+                    RGraph.Text2(obj.context, {
+                       font:'Verdana',
+                       'size':7,
+                       'x':obj.coords[n][0] + (obj.coords[n][2]),
+                       'y':obj.coords[n][1] + (obj.coords[n][3] / 2),
+                       'text':valor,
+                       'valign':'center',
+                       'halign':'right'
+                      });  
+                }
+
+        }).grow().on('beforedraw', function (obj)
+    {
+        RGraph.clear(obj.canvas, 'white');
+    });
+        }
+        
+        function grafica5(){
+        //alert("escala=" + escala + " target=" + target);
+            var partners;
+            var partners_bookings;
+            var datos;
+            
+            var miPost;
+            if ($("#chkPorcentage").is(':checked'))
+                    miPost="%";
+                else
+                    miPost="K";
+           
+            
+            
+            
+            partners=["ENTERPRISE","PUBLIC","COMMERCIAL"];
+            partners_bookings = desglosa_By_SCSM("miTabla");
+            //alert(partners[][] + " " + partners[0][]);
+            hbar2 = new RGraph.HBar({
+            id: 'cvs5',
+            data: partners_bookings,
+
+            options: {
+                title: 'Forecast by SCMS',
+                grouping: 'stacked',
+                'xlabels.count': escala5,
+                numxticks: escala5,
+                xmax: porcentage_max5,
+                linewidth: 1,
+                strokestyle: 'grey',
+                vmargin: 5,
+                labels: partners,
+                units: {
+                    post: miPost
+                },                    
+                text: {
+                    size: 7
+                },   
+                gutter: {
+                    left: 100
+                },
+                colors: ['#004400','#008800','#50cc50','#eeee55','#9b0000'],
+                background: {
+                    grid: {
+
+                        hlines: false,
+                        border: false,
+                        autofit: {
+                            numvlines: escala5
+                        }
+                    }
+                },
+                
+            }
+        }).grow().on('beforedraw', function (obj)
+    {
+        RGraph.clear(obj.canvas, 'white');
+    });
+        }
+        
+        function grafica6(){
+        //alert("escala=" + escala + " target=" + target);
+            var etiquetas;
+            var datos;
+            var datos_l;
+            var datos_r;
+            var miPost;
+            var umbral = $("#elUmbral")[0].value;
+            var titulo=""
+            if ($("#chkSplit").is(':checked'))
+            {
+                titulo='Número de Operaciones < ó > de ' + umbral + 'K';   
+                miPost="";
+            }
+            else
+            {
+                titulo='Facturación en Operaciones < ó > de ' + umbral + 'K';
+                miPost="K";
+            }
+            etiquetas=["ENT","PS","COM"];
+            datos = desglosa_By_SCSM_Split("miTabla",umbral*1000);
+            datos_l = datos[0];
+            datos_r = datos[1];
+            biPolar1 = new RGraph.Bipolar({
+            id: 'cvs9',
+            left: datos_l,
+            right: datos_r,
+            options: {
+                title: titulo,
+                'labels.count': escala6,
+                numxticks: escala6,
+                xmax: porcentage_max6,
+                
+                labels: etiquetas,
+                units: {
+                    post: miPost
+                },                    
+                text: {
+                    size: 7
+                },   
+
+                colors: ['Gradient(#80dfdf:#3A89D3)']
+                
+            }
+        }).on('draw', function (obj)
+        {
+
+                var valor; 
+                obj.context.fillStyle = 'black';
+                
+                for (var x = 0; x < 3; x++){
+                    valor=Math.round(datos_l[x]).toString();
+                    if (!($("#chkSplit").is(':checked'))) valor = valor + "K";
+                    if (datos_l[x]!=0)
+
+                    RGraph.Text2(obj.context, {
+                       font:'Verdana',
+                       'size':7,
+                       'x':obj.coords[x][0] - 2,
+                       'y':obj.coords[x][1] + (obj.coords[x][3] / 2),
+                       'text':valor,
+                       'valign':'center',
+                       'halign':'right'
+                      });  
+                }
+                for (var x = 0; x < 3; x++){
+                    valor=Math.round(datos_r[x]).toString();
+                    if (!($("#chkSplit").is(':checked'))) valor = valor + "K";
+                    if (datos_r[x]!=0)
+                        RGraph.Text2(obj.context, {
+                           font:'Verdana',
+                           'size':7,
+                           'x':obj.coords[x+3][0] + obj.coords[x+3][2] + 2,
+                           'y':obj.coords[x+3][1] + (obj.coords[x+3][3] / 2),
+                           'text':valor,
+                           'valign':'center',
+                           'halign':'left'
+                          });  
+                }
+
+
+        }).draw();}
+        
+        function graficaCOM1(){
+            var datos;
+            var etiquetas;
+                datos = desglosa_By_M("miTabla");
+                //alert(datos[1][3]);
+                for (var x = 0; x < 9; x++){
+                    for (var y = 0; y < 5; y++){
+                        if(datos[x][y]<0) {
+                            //alert(datos[1][3]);
+                            datos[x][y]= 0;
+                            var canvas  = document.getElementById("cvs_COM1");
+                            var context = canvas.getContext('2d');
+                            var miposicion= x*5+4;
+                            var mix      = bar1.coords[miposicion][0];
+                            var miy      = bar1.coords[miposicion][1];
+                            var miwidth  = bar1.coords[miposicion][2];
+                            var miheight = bar1.coords[miposicion][3];
+                            //alert("pos("+mix+","+miy+") Valor=" + miheight );
+                            context.fillStyle = 'red';
+                            context.fillRect(mix, miy, miwidth+4, 100);
+                        }
+                    }
+                }
+                etiquetas = ["Central1","Central2","Central3","North-East1","NorthEast2","East","North","South","SMB"];
+            
+            
+            
+            
+            if ($("#chkIAAS").is(':checked')){
+                barCOM1 = new RGraph.Bar({
+            id: 'cvs_COM1',
+            data: datos,
+
+            options: {
+
+                'ylabels.count': escala2,
+                numyticks: escala2,
+                numxticks: etiquetas.length,
+                ymax: porcentage_max2,
+               
+                grouping: 'stacked',
+                linewidth: 1,
+                strokestyle: 'grey',
+                hmargin: 5,
+                title: 'Evolución temporal',
+                labels: etiquetas,
+                gutter: {
+                    left: 60
+                },
+                units: {
+                    post: miPost
+                },                    
+
+               
+                colors: [     
+                    'Gradient(#9b0000:#9b0000)',
+                    'Gradient(#eeee55:#eeee55)',
+                    'Gradient(#50cc50:#50cc50)',
+                    'Gradient(#008800:#008800)',
+                    'Gradient(#004400:#004400)',
+                        ],
+                background: {
+                    grid: {
+
+                        hlines: false,
+                        border: false,
+                        autofit: {
+                            numvlines: etiquetas.length
+                        }
+                    }
+                },
+
+                tooltips: ['IaaS','Booked','Commit','Upside','Non Forecast']
+            }
+        }).on('draw', function (obj)
+        {
+
+                var valor; 
+                var num;
+                for (var x = 0; x < 5; x++){
+                    for (var y = 0; y < etiquetas.length; y++){
+                        if (x==4)
+                            obj.context.fillStyle = 'white';
+                        else
+                            obj.context.fillStyle = 'black';
+                        num= parseInt( datos[y][x]);
+                        if ($("#chkPorcentage").is(':checked'))
+                            valor=num.toString() + "%";
+                        else
+                             valor=num.toString() +"K";
+                        
+                        if (num!=0)
+                        RGraph.Text2(obj.context, {
+                           font:'Verdana',
+                           'size':7,
+                           'x':obj.coords[x+5*y][0] + (obj.coords[x+5*y][2] / 2),
+                           'y':obj.coords[x+5*y][1] + (obj.coords[x+5*y][3] / 2),
+                           'text':valor,
+                           'valign':'center',
+                           'halign':'center'
+                          });  
+                    }
+                }
+
+        }).draw()
+            } else {
+                barCOM1 = new RGraph.Bar({
+            id: 'cvs2',
+            data: datos,
+
+            options: {
+
+                'ylabels.count': escala2,
+                numyticks: escala2,
+                numxticks: etiquetas.length,
+                ymax: porcentage_max2,
+                
+                grouping: 'stacked',
+                linewidth: 1,
+                strokestyle: 'grey',
+                hmargin: 5,
+                title: 'Evolución temporal',
+                labels: etiquetas,
+                gutter: {
+                    left: 60
+                },
+                units: {
+                    post: miPost
+                },                    
+
+               
+                
+                colors: [     
+                    'Gradient(#9b0000:#9b0000)',
+                    'Gradient(#eeee55:#eeee55)',
+                    'Gradient(#50cc50:#50cc50)',
+                    'Gradient(#008800:#008800)',
+                    
+                        ],
+                background: {
+                    grid: {
+
+                        hlines: false,
+                        border: false,
+                        autofit: {
+                            numvlines: etiquetas.length
+                        }
+                    }
+                },
+
+                tooltips: ['Booked','Commit','Upside','Non Forecast']
+            }
+        }).on('draw', function (obj)
+        {
+
+                var valor; 
+                var num;
+                for (var x = 0; x < 5; x++){
+                    for (var y = 0; y < etiquetas.length; y++){
+                        if (x==4)
+                            obj.context.fillStyle = 'white';
+                        else
+                            obj.context.fillStyle = 'black';
+                        num= parseInt( datos[y][x]);
+                        if ($("#chkPorcentage").is(':checked'))
+                            valor=num.toString() + "%";
+                        else
+                             valor=num.toString() +"K";
+                        
+                        if (num!=0)
+                        RGraph.Text2(obj.context, {
+                           font:'Verdana',
+                           'size':7,
+                           'x':obj.coords[x+5*y][0] + (obj.coords[x+5*y][2] / 2),
+                           'y':obj.coords[x+5*y][1] + (obj.coords[x+5*y][3] / 2),
+                           'text':valor,
+                           'valign':'center',
+                           'halign':'center'
+                          });  
+                    }
+                }
+
+        }).draw();
+            }
+            
+        }
+        
+        function Refresh_Graph() {
+            if (!cambiaEscala){
+            var ratio = 100*(iaas+bookings+commit+upside+nf)/target;
+                //alert(ratio);
+                porcentage_max = ratio - (ratio % 25) + 25;
+                //alert(porcentage_max);
+                escala = porcentage_max/25;
+                
+                escala = Math.min(10,escala);
+            }
+            //alert(escala);
+            cambiaEscala = false;
+            //alert(target);
+            if ($("#chkIAAS").is(':checked'))
+                hbar.data= [[iaas*100/target,bookings*100/target,commit*100/target,upside*100/target,nf*100/target]];
+            else
+                hbar.data= [[bookings*100/target,commit*100/target,upside*100/target,nf*100/target]];
+            //hbar.set('xmax', porcentage_max);
+            //hbar.set('xlabels.count', escala);
+            //hbar.set('background.grid.autofit', true);
+            //hbar.set('numxticks', escala);
+            //hbar.set('background.grid.autofit.align', true);
+            //hbar.set('background.grid.autofit.numvlines', escala);
+            //hbar.set('labels', [periodoGrafica]);
+            //hbar.set('labels.ingraph', ['a','b',,'d']);
+            
+            //RGraph.redraw();    
+        }
+
+        function Refresh_Graph2() {
+            var ratio2 = 100*(iaas+bookings+commit+upside+nf)/target;
+            
+            if ($("#chkPeriodo").is(':checked'))
+            {
+                bar1.data = desglosa_By_M("miTabla");
+                
+                ratio2 = Math.max(bar1.data[0][0]+bar1.data[0][1]+bar1.data[0][2]+bar1.data[0][3]+bar1.data[0][4],
+                                bar1.data[1][0]+bar1.data[1][1]+bar1.data[1][2]+bar1.data[1][3]+bar1.data[1][4],
+                                bar1.data[2][0]+bar1.data[2][1]+bar1.data[2][2]+bar1.data[2][3]+bar1.data[2][4],
+                                bar1.data[3][0]+bar1.data[3][1]+bar1.data[3][2]+bar1.data[3][3]+bar1.data[3][4],
+                                bar1.data[4][0]+bar1.data[4][1]+bar1.data[4][2]+bar1.data[4][3]+bar1.data[4][4],
+                                bar1.data[5][0]+bar1.data[5][1]+bar1.data[5][2]+bar1.data[5][3]+bar1.data[5][4],
+                                bar1.data[6][0]+bar1.data[6][1]+bar1.data[6][2]+bar1.data[6][3]+bar1.data[6][4],
+                                bar1.data[7][0]+bar1.data[7][1]+bar1.data[7][2]+bar1.data[7][3]+bar1.data[7][4],
+                                bar1.data[8][0]+bar1.data[8][1]+bar1.data[8][2]+bar1.data[8][3]+bar1.data[8][4],
+                                bar1.data[9][0]+bar1.data[9][1]+bar1.data[9][2]+bar1.data[9][3]+bar1.data[9][4],
+                                bar1.data[10][0]+bar1.data[10][1]+bar1.data[10][2]+bar1.data[10][3]+bar1.data[10][4],
+                                bar1.data[11][0]+bar1.data[11][1]+bar1.data[11][2]+bar1.data[11][3]+bar1.data[11][4]);
+            }
+            else
+            {
+                bar1.data = desglosa_By_Q("miTabla"); 
+                for (var x = 0; x < 4; x++){
+                    for (var y = 0; y < 5; y++){
+                        if(bar1.data[x][y]<0) alert("Mes " + (x+1) +":" + y);
+                    }
+                }
+                ratio2 = Math.max(bar1.data[0][0]+bar1.data[0][1]+bar1.data[0][2]+bar1.data[0][3]+bar1.data[0][4],
+                                bar1.data[1][0]+bar1.data[1][1]+bar1.data[1][2]+bar1.data[1][3]+bar1.data[1][4],
+                                bar1.data[2][0]+bar1.data[2][1]+bar1.data[2][2]+bar1.data[2][3]+bar1.data[2][4],
+                                bar1.data[3][0]+bar1.data[3][1]+bar1.data[3][2]+bar1.data[3][3]+bar1.data[3][4]);
+            }
+            
+            if ($("#chkPorcentage").is(':checked'))
+            {
+                
+                porcentage_max2 = ratio2 - (ratio2 % 25) + 25;
+                
+                escala2 = porcentage_max2/25;
+                
+                escala2 = Math.min(10,escala2);
+            } 
+            else
+            {
+                
+                porcentage_max2 = ratio2 - (ratio2 % 1000) + 1000;
+                
+                escala2 = porcentage_max2/1000;
+                if (escala2 > 8)
+                {
+                    if(escala2%4 == 0)
+                       escala2 = escala2; 
+                    else
+                        escala2 = escala2 + 4 - escala2%4;
+                    
+                    porcentage_max2 = escala2 * 1000;
+                    
+                    escala2 = 8;
+                    
+                }
+                //alert(porcentage_max2 + " " + escala2);
+            }
+                
+                
+            
+            
+            
+            //bar1.data= desglosa_By_Q("miTabla");
+            
+            //bar1.set('ymax', porcentage_max);
+            //bar1.set('ylabels.count', escala);
+            //bar1.set('background.grid.autofit', true);
+            //bar1.set('numyticks', escala);
+            //bar1.set('background.grid.autofit.align', false);
+            //bar1.set('background.grid.autofit.numvlines', 4);
+            //bar1.set('labels', ["Q1","Q2","Q3","Q4"]);
+            //RGraph.redraw();    
+        }
+        
+        function Refresh_Graph4() {
+            var ratio4;
+            hbar1.data = desglosa_By_Partner("miTabla"); 
+            ratio4 = Math.max(hbar1.data[1][0],hbar1.data[1][1],hbar1.data[1][2],hbar1.data[1][3],hbar1.data[1][4],hbar1.data[1][5],hbar1.data[1][6],hbar1.data[1][7],hbar1.data[1][8],hbar1.data[1][9]);
+            //alert(ratio5);
+            
+            if ($("#chkPorcentage").is(':checked'))
+            {
+                //alert("ratio="+ratio4);
+                //ratio4= Math.round(100*ratio4)/100;
+                //alert("ratio="+ratio4);
+                porcentage_max4 = ratio4 - (ratio4 % 5) + 5;
+                //alert("(%max)="+porcentage_max4);
+                escala4 = Math.max(4,porcentage_max4/5);
+                escala4 = Math.min(10,escala4);
+                //porcentage_max4 = porcentage_max4.toPrecision(2);
+                
+                //alert("(%max)="+porcentage_max4);
+            } 
+            else
+            {
+                
+                porcentage_max4 = ratio4 - (ratio4 % 100) + 100;
+                
+                escala4 = porcentage_max4/100;
+                if (escala4 > 8)
+                {
+                    if(escala4%4 == 0)
+                       escala4 = escala4; 
+                    else
+                        escala4 = escala4 + 4 - escala4%4;
+                    
+                    porcentage_max4 = escala4 * 100;
+                    
+                    escala4 = 8;
+                    
+                }
+                //alert(porcentage_max2 + " " + escala2);
+            }
+                
+                
+            
+            
+            
+            //bar1.data= desglosa_By_Q("miTabla");
+            
+            //bar1.set('ymax', porcentage_max);
+            //bar1.set('ylabels.count', escala);
+            //bar1.set('background.grid.autofit', true);
+            //bar1.set('numyticks', escala);
+            //bar1.set('background.grid.autofit.align', false);
+            //bar1.set('background.grid.autofit.numvlines', 4);
+            //bar1.set('labels', ["Q1","Q2","Q3","Q4"]);
+            //RGraph.redraw();    
+        }
+        
+        function Refresh_Graph5() {
+            var ratio5;
+            hbar2.data = desglosa_By_SCSM("miTabla"); 
+            ratio5 = Math.max(hbar2.data[0][0]+hbar2.data[0][1]+hbar2.data[0][2]+hbar2.data[0][3]+hbar2.data[0][4],
+                                hbar2.data[1][0]+hbar2.data[1][1]+hbar2.data[1][2]+hbar2.data[1][3]+hbar2.data[1][4],
+                                hbar2.data[2][0]+hbar2.data[2][1]+hbar2.data[2][2]+hbar2.data[2][3]+hbar2.data[2][4]);
+            //alert(ratio5);
+            
+            if ($("#chkPorcentage").is(':checked'))
+            {
+                
+                porcentage_max5 = ratio5 - (ratio5 % 25) + 25;
+                
+                escala5 = porcentage_max5/25;
+                escala5 = Math.min(10,escala5);
+            } 
+            else
+            {
+                
+                porcentage_max5 = ratio5 - (ratio5 % 1000) + 1000;
+                
+                escala5 = porcentage_max5/1000;
+                if (escala5 > 8)
+                {
+                    if(escala5%4 == 0)
+                       escala5 = escala5; 
+                    else
+                        escala5 = escala5 + 4 - escala5%4;
+                    
+                    porcentage_max5 = escala5 * 1000;
+                    
+                    escala5 = 8;
+                    
+                }
+                //alert(porcentage_max2 + " " + escala2);
+            }
+                
+                
+            
+            
+            
+            //bar1.data= desglosa_By_Q("miTabla");
+            
+            //bar1.set('ymax', porcentage_max);
+            //bar1.set('ylabels.count', escala);
+            //bar1.set('background.grid.autofit', true);
+            //bar1.set('numyticks', escala);
+            //bar1.set('background.grid.autofit.align', false);
+            //bar1.set('background.grid.autofit.numvlines', 4);
+            //bar1.set('labels', ["Q1","Q2","Q3","Q4"]);
+            //RGraph.redraw();    
+        }
+
+        function Refresh_Graph6() {
+            var ratio6;
+            var miUmbral = $("#elUmbral")[0].value;
+            biPolar1.left = desglosa_By_SCSM_Split("miTabla",miUmbral*1000)[0]; 
+            biPolar1.right = desglosa_By_SCSM_Split("miTabla",miUmbral*1000)[1]; 
+            ratio6 = Math.max(  biPolar1.left[0],
+                                biPolar1.left[1],
+                                biPolar1.left[2],
+                                biPolar1.right[0],
+                                biPolar1.right[1],
+                                biPolar1.right[2]);
+
+            if ($("#chkSplit").is(':checked'))
+            {
+                
+                porcentage_max6 = ratio6 - (ratio6 % 40) + 40;
+                
+                escala6 = porcentage_max6/40;
+                escala6 = Math.min(4,escala6);
+                escala6 = Math.max(4,escala6);
+            } 
+            else
+            {
+            
+            porcentage_max6 = ratio6 - (ratio6 % 1000) + 1000;
+
+            escala6 = porcentage_max6/1000;
+            if (escala6 > 4)
+                {
+                    porcentage_max6 = escala6 * 1000;
+                    
+                    escala6 = 4;
+                    
+                }
+            }
+      
+        }
+
+        function Refresh_ALLGraphs(){
+            desglosa("miTabla");
+            CalculaTarget();
+            Refresh_Graph();
+            Refresh_Graph2();
+            Refresh_Graph4();
+            Refresh_Graph5();
+            Refresh_Graph6();
+            RGraph.Clear(document.getElementById("cvs"));
+            RGraph.Clear(document.getElementById("cvs2"));
+            RGraph.Clear(document.getElementById("cvs3"));
+            RGraph.Clear(document.getElementById("cvs4"));
+            RGraph.Clear(document.getElementById("cvs5"));
+            
+            RGraph.Clear(document.getElementById("cvs9"));
+            RGraph.ObjectRegistry.Clear();
+            grafica1();
+            grafica2();
+            grafica3();
+            grafica4();
+            grafica5();
+            grafica6();
+        }
+        
+        //$(document).ready(function () {
+        //    oTable = $('#miTabla').DataTable({
+        //        "paging": false,
+        //        "autoWidth": false,
+
+
+        //        "scrollCollapse": true
+        //    }); 
+        //});
+
+        
+        //*********************************************************************************************
+        // FUNCION que devuelve ARRAY del Select que se le pasa como parámetro
+        // Return an array of the selected opion values
+        // select is an HTML select element
+        //*********************************************************************************************
+
+function getSelectValues(select) {
+  var result = [];
+  var options = select && select.options;
+  var opt;
+
+  for (var i=0, iLen=options.length; i<iLen; i++) {
+    opt = options[i];
+
+    if (opt.selected) {
+      result.push(opt.value || opt.text);
+    }
+  }
+  return result;
+}
+        
+function Create2DArray(rows,columns) {
+   var x = new Array(rows);
+   for (var i = 0; i < rows; i++) {
+       x[i] = new Array(columns);
+   }
+   return x;
+}
+
+function desglosa(_id){
+
+
+var table = document.getElementById(_id);
+var ele;
+iaas = 0;
+bookings = 0;
+commit = 0;
+upside = 0;
+nf = 0;
+var lineasVisibles= 0;
+//alert(table.tBodies[0].rows[0].textContent);
+
+if(table.tBodies[0].rows[0].textContent == "No matching records found")
+{
+    //alert("NO RECORDS");
+    document.getElementById("lbl_bookings").innerHTML = formatCurrency(bookings+iaas);
+    document.getElementById("lbl_commit").innerHTML = formatCurrency(commit);
+    document.getElementById("lbl_upside").innerHTML = formatCurrency(upside);
+    document.getElementById("lbl_nf").innerHTML = formatCurrency(nf);
+    if(lineasVisibles==0) lineasVisibles=1;
+    document.getElementById("nLineas").innerHTML = ((lineasVisibles-1) + "/" + (tablaPrincipal.Sheet1.length) + " lineas.");
+    document.getElementById("Filtros").innerHTML = ("Filtros (" + (lineasVisibles-1) + "/" + (tablaPrincipal.Sheet1.length) + " lineas)");
+    document.getElementById("totalCol").innerHTML = formatCurrency(iaas + bookings + commit + upside + nf);
+    return;
+}
+
+for (var r = 1; r < table.rows.length; r++){
+
+        table.rows[r].style.display = '';
+        lineasVisibles +=1;
+        if (table.rows[r].cells[8].innerHTML == "Booked"){
+            if ($("#chkIAAS").is(':checked')){
+                if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                    iaas += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else
+                    bookings += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else {
+                bookings += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            }
+        }
+        else if (table.rows[r].cells[8].innerHTML == "Commit")
+             commit += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+        else if (table.rows[r].cells[8].innerHTML == "Upside")
+             upside += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+        else if (table.rows[r].cells[8].innerHTML == "NF")
+             nf += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+
+}
+
+document.getElementById("lbl_bookings").innerHTML = formatCurrency(bookings+iaas);
+document.getElementById("lbl_commit").innerHTML = formatCurrency(commit);
+document.getElementById("lbl_upside").innerHTML = formatCurrency(upside);
+document.getElementById("lbl_nf").innerHTML = formatCurrency(nf);
+if(lineasVisibles==0) lineasVisibles=1;
+document.getElementById("nLineas").innerHTML = ((lineasVisibles-1) + "/" + (tablaPrincipal.Sheet1.length) + " lineas.");
+document.getElementById("Filtros").innerHTML = ("Filtros (" + (lineasVisibles-1) + "/" + (tablaPrincipal.Sheet1.length) + " lineas)");
+document.getElementById("totalCol").innerHTML = formatCurrency(iaas + bookings + commit + upside + nf);
+//CalculaTarget();
+//Refresh_Graph();
+
+}
+        
+function desglosa_By_Q(_id){
+
+
+var table = document.getElementById(_id);
+var ele;
+var tabla_desglosada = new Array();
+tabla_desglosada = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
+//iaas = 0;
+//bookings = 0;
+//commit = 0;
+//upside = 0;
+//nf = 0;
+if(table == null) return tabla_desglosada;
+//for (var r = 1; r < table.rows.length; r++){
+ // alert(table.rows.length);
+for (var r = 1; r < table.rows.length-1; r++){
+        table.rows[r].style.display = '';
+        
+        if (table.rows[r].cells[11].innerHTML.indexOf("Q1")>=0)
+            {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[0][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[0][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[0][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[0][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[0][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[0][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[11].innerHTML.indexOf("Q2")>=0)
+                {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[1][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[1][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[1][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[1][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[1][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[1][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[11].innerHTML.indexOf("Q3")>=0)
+                {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[2][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[2][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[2][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[2][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[2][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[2][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[11].innerHTML.indexOf("Q4")>=0)
+                {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[3][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[3][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[3][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[3][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[3][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[3][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } 
+
+}
+if ($("#chkPorcentage").is(':checked'))
+{
+    for (var x = 0; x < 4; x++){
+        for (var y = 0; y < 5; y++){
+            tabla_desglosada[x][y] = tabla_desglosada[x][y]*100/(TargetFY()*seasonality[x]);
+        }
+    }
+} else
+{
+    for (var x = 0; x < 4; x++){
+        for (var y = 0; y < 5; y++){
+            tabla_desglosada[x][y] = tabla_desglosada[x][y]/1000;
+        }
+    } 
+}
+    
+    
+return tabla_desglosada;
+
+}
+        
+function desglosa_By_M(_id){
+
+
+var table = document.getElementById(_id);
+var ele;
+var tabla_desglosada = new Array();
+tabla_desglosada = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
+//iaas = 0;
+//bookings = 0;
+//commit = 0;
+//upside = 0;
+//nf = 0;
+if(table == null) return tabla_desglosada;
+//for (var r = 1; r < table.rows.length; r++){
+ // alert(table.rows.length);
+for (var r = 1; r < table.rows.length-1; r++){
+        table.rows[r].style.display = '';
+        
+        if (table.rows[r].cells[11].innerHTML.indexOf("Q1-M1")>=0)
+            {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[0][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[0][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[0][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[0][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[0][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[0][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[11].innerHTML.indexOf("Q1-M2")>=0)
+                {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[1][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[1][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[1][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[1][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[1][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[1][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[11].innerHTML.indexOf("Q1-M3")>=0)
+                {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[2][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[2][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[2][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[2][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[2][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[2][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[11].innerHTML.indexOf("Q2-M1")>=0)
+                {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[3][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[3][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[3][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[3][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[3][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[3][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[11].innerHTML.indexOf("Q2-M2")>=0)
+                {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[4][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[4][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[4][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[4][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[4][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[4][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[11].innerHTML.indexOf("Q2-M3")>=0)
+                {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[5][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[5][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[5][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[5][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[5][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[5][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[11].innerHTML.indexOf("Q3-M1")>=0)
+                {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[6][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[6][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[6][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[6][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[6][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[6][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[11].innerHTML.indexOf("Q3-M2")>=0)
+                {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[7][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[7][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[7][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[7][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[7][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[7][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[11].innerHTML.indexOf("Q3-M3")>=0)
+                {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[8][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[8][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[8][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[8][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[8][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[8][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[11].innerHTML.indexOf("Q4-M1")>=0)
+                {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[9][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[9][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[9][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[9][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[9][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[9][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[11].innerHTML.indexOf("Q4-M2")>=0)
+                {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[10][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[10][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[10][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[10][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[10][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[10][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[11].innerHTML.indexOf("Q4-M3")>=0)
+                {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[11][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[11][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[11][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[11][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[11][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[11][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } 
+
+}
+    var factormes;
+if ($("#chkPorcentage").is(':checked'))
+{
+    for (var x = 0; x < 12; x++){
+        switch (x%3){
+            case 0:
+                factormes = 0.2;
+                
+                break;
+            case 1:
+                factormes = 0.3;
+                
+                break;
+            case 2:
+                factormes = 0.5;
+                
+                break;
+            default:
+            break;
+        }
+        for (var y = 0; y < 5; y++){
+            tabla_desglosada[x][y] = tabla_desglosada[x][y]*100/(TargetFY()*seasonality[parseInt(x/3)]*factormes);
+        }
+    }
+} else
+{
+    for (var x = 0; x < 12; x++){
+        for (var y = 0; y < 5; y++){
+            tabla_desglosada[x][y] = tabla_desglosada[x][y]/1000;
+        }
+    }
+}
+return tabla_desglosada;
+
+}
+        
+function desglosa_By_Tech(_id){
+    var table = document.getElementById(_id);
+    var ele;
+    var tabla_desglosada = new Array();
+    tabla_desglosada = [0,0,0,0];
+    //iaas = 0;
+    //bookings = 0;
+    //commit = 0;
+    //upside = 0;
+    //nf = 0;
+    if(table == null) return tabla_desglosada;
+    //for (var r = 1; r < table.rows.length; r++){
+     // alert(table.rows.length);
+    for (var r = 1; r < table.rows.length-1; r++){
+        table.rows[r].style.display = '';
+        
+        if (table.rows[r].cells[2].innerHTML.indexOf("UCS")>=0)
+            {       
+                tabla_desglosada[0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[2].innerHTML.indexOf("N9K")>=0)
+            {       
+                tabla_desglosada[1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[2].innerHTML.indexOf("Nexus")>=0)
+            {       
+                tabla_desglosada[2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[2].innerHTML.indexOf("MDS")>=0)
+            {       
+                tabla_desglosada[3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            }  
+    }  
+    return tabla_desglosada;
+}
+        
+function desglosa_By_SCSM(_id){
+
+
+var table = document.getElementById(_id);
+var ele;
+var tabla_desglosada = new Array();
+tabla_desglosada = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
+//iaas = 0;
+//bookings = 0;
+//commit = 0;
+//upside = 0;
+//nf = 0;
+if(table == null) return tabla_desglosada;
+//for (var r = 1; r < table.rows.length; r++){
+ // alert(table.rows.length);
+for (var r = 1; r < table.rows.length-1; r++){
+        table.rows[r].style.display = '';
+        
+        if (table.rows[r].cells[7].innerHTML.indexOf("ENT")>=0)
+            {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[0][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[0][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[0][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[0][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[0][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[0][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[7].innerHTML.indexOf("PS")>=0)
+                {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[1][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[1][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[1][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[1][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[1][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[1][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } else if (table.rows[r].cells[7].innerHTML.indexOf("COM")>=0)
+                {   
+    
+                if (table.rows[r].cells[8].innerHTML == "Booked"){
+                    if ($("#chkIAAS").is(':checked')){
+                        if (table.rows[r].cells[1].innerHTML == "IAAS_Cloud")
+                            tabla_desglosada[2][0] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                        else
+                            tabla_desglosada[2][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    } else {
+                        tabla_desglosada[2][1] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                    }
+                }
+                else if (table.rows[r].cells[8].innerHTML == "Commit")
+                     tabla_desglosada[2][2] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "Upside")
+                     tabla_desglosada[2][3] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+                else if (table.rows[r].cells[8].innerHTML == "NF")
+                     tabla_desglosada[2][4] += parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+            } 
+}
+
+var objetivos=TargetFY_SCMS();
+var periodo = document.getElementById("FechaSelect");
+periodo = periodo.options[periodo.selectedIndex].innerHTML;
+var factor=1;
+switch (periodo.length){
+                case 4: // periodo FY
+                    factor=1;
+                    break;
+                case 7: // periodo Quarter
+                    factor = factor * seasonality[parseInt(periodo.substring(6,7))-1];
+                    break;
+                case 10: // periodo Month
+                    factor = factor * seasonality[parseInt(periodo.substring(6,7))-1];
+                    var t2=(periodo.substring(9,10));
+                    switch (parseInt(t2)){
+                        case 1:
+                            factor = factor *0.2;
+                            
+                            break;
+                        case 2:
+                            factor = factor *0.3;
+                            
+                            break;
+                        case 3:
+                            factor = factor *0.5;
+                            
+                            break;
+                        default:
+                        break;
+                    }
+                    break;
+                case 13: // periodo Week
+                    factor = factor * seasonality[parseInt(periodo.substring(6,7))-1]/3;
+                    break;
+                default:
+            }
+//alert(objetivos[0]*factor + " " +objetivos[1]*factor + " " +objetivos[2]*factor);
+if ($("#chkPorcentage").is(':checked'))
+{
+    for (var x = 0; x < 3; x++){
+        
+        for (var y = 0; y < 5; y++){
+            tabla_desglosada[x][y] = tabla_desglosada[x][y]*100/(objetivos[x]*factor);
+        }
+    }
+} else
+{
+    for (var x = 0; x < 3; x++){
+        for (var y = 0; y < 5; y++){
+            tabla_desglosada[x][y] = tabla_desglosada[x][y]/1000;
+        }
+    } 
+}
+    
+  
+return tabla_desglosada;
+
+}
+        
+function desglosa_By_SCSM_Split(_id, miUmbral){
+    var table = document.getElementById(_id);
+    var ele;
+    var contador=1;
+    var tabla_desglosada = new Array();
+    tabla_desglosada = [[0,0,0],[0,0,0]];
+    //iaas = 0;
+    //bookings = 0;
+    //commit = 0;
+    //upside = 0;
+    //nf = 0;
+    if(table == null) return tabla_desglosada;
+    //for (var r = 1; r < table.rows.length; r++){
+     // alert(table.rows.length);
+    for (var r = 1; r < table.rows.length-1; r++){
+        table.rows[r].style.display = '';
+        if ($("#chkSplit").is(':checked'))
+                contador = 1;
+            else
+                contador = parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+        if(parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''))<miUmbral && parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''))>0)
+        {    
+            if (table.rows[r].cells[7].innerHTML.indexOf("ENT")>=0)
+            {   
+                tabla_desglosada[0][0] += contador;
+            } else if (table.rows[r].cells[7].innerHTML.indexOf("PS")>=0)
+            {   
+                tabla_desglosada[0][1] += contador;
+            } else if (table.rows[r].cells[7].innerHTML.indexOf("COM")>=0)
+            {   
+                tabla_desglosada[0][2] += contador;
+            } 
+        }
+        else if(parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''))>=miUmbral)
+        {
+            if (table.rows[r].cells[7].innerHTML.indexOf("ENT")>=0)
+            {  
+                tabla_desglosada[1][0] += contador;
+            } else if (table.rows[r].cells[7].innerHTML.indexOf("PS")>=0)
+            {   
+                tabla_desglosada[1][1] += contador;
+            } else if (table.rows[r].cells[7].innerHTML.indexOf("COM")>=0)
+            {   
+                tabla_desglosada[1][2] += contador;
+            } 
+        }
+        
+        
+    }
+
+    for (var x = 0; x < 3; x++){       
+            if ($("#chkSplit").is(':checked'))
+                return tabla_desglosada;
+            else
+            {
+                tabla_desglosada[0][x] = tabla_desglosada[0][x]/1000;
+                tabla_desglosada[1][x] = tabla_desglosada[1][x]/1000;
+            }
+    } 
+
+    
+  
+return tabla_desglosada;
+
+}
+
+function desglosa_By_Partner(_id){
+    if(oTable == undefined) return tabla_desglosada;
+    var misPartners=oTable.column(5).data().unique();
+    //alert(misPartners.length);
+    //misPartners = cambiaNombrePartners(misPartners).unique();
+    //alert(misPartners.length);
+    var table = document.getElementById(_id);
+    var ele;
+    var tablaPartners = Create2DArray(misPartners.length,2);
+    var tablaImporte = new Array();
+    var tabla_desglosada = Create2DArray(2,10);
+    var indicePartner;
+    
+    
+    
+    for (var r = 0; r < misPartners.length; r++)
+    {
+        tablaPartners[r][0]=misPartners[r];
+        tablaPartners[r][1]=0;
+    }
+    if(table == null) return tabla_desglosada;
+    //for (var r = 1; r < table.rows.length; r++){
+     // alert(table.rows.length);
+    for (var r = 1; r < table.rows.length-1; r++){
+        
+        table.rows[r].style.display = '';
+        if(table.rows[r].cells[8].innerHTML == "Booked" && table.rows[r].cells[5].innerHTML != "UNKNOWN"){
+            indicePartner = misPartners.indexOf(table.rows[r].cells[5].innerHTML);
+            tablaPartners[indicePartner][1] = tablaPartners[indicePartner][1] + parseInt(table.rows[r].cells[3].innerHTML.replace(/\$|\,/g,''));
+        }
+    }  
+    
+    tablaPartners.sort(function(a,b) {
+         return b[1] - a[1];
+    });
+    
+if ($("#chkPorcentage").is(':checked'))
+{
+    for (var r = 0; r < 10; r++)
+    {
+        tabla_desglosada[0][r] = tablaPartners[r][0];
+        tabla_desglosada[1][r] = 100*(tablaPartners[r][1]/(iaas+bookings));
+        if(tabla_desglosada[1][r] <=0) tabla_desglosada[0][r]="";
+    }
+} else
+{
+    for (var r = 0; r < 10; r++)
+    {
+        tabla_desglosada[0][r] = tablaPartners[r][0];
+        tabla_desglosada[1][r] = parseInt(tablaPartners[r][1]/1000);
+        if(tabla_desglosada[1][r] <=0) tabla_desglosada[0][r]="";
+    }
+}
+        
+    
+    return tabla_desglosada;
+}  
+        
+        //*********************************************************************************************
+        // FIN DE LA FUNCION 
+        //*********************************************************************************************
+
+function cambiaNombrePartners(tablaPartners) {
+     for (var r = 0; r < tablaPartners.length; r++){
+        if (tablaPartners[r].indexOf("INTERNACIONAL PERIFERICOS Y MEMORIAS")>=0) tablaPartners[r]="IPM";
+        if (tablaPartners[r].indexOf("INFORMATICA EL CORTE INGLES")>=0) tablaPartners[r]="IECISA";
+        if (tablaPartners[r].indexOf("DIMENSION DATA")>=0) tablaPartners[r]="DIMENSION DATA";
+        if (tablaPartners[r].indexOf("Tecnocom")>=0) tablaPartners[r]="TECNOCOM";
+        if (tablaPartners[r].indexOf("UNITRONICS")>=0) tablaPartners[r]="UNITRONICS";
+        if (tablaPartners[r].indexOf("SATEC")>=0) tablaPartners[r]="SATEC";
+        if (tablaPartners[r].indexOf("SCC SERVICES")>=0) tablaPartners[r]="SCC SPAIN";
+        if (tablaPartners[r].indexOf("ATOS SPAIN")>=0) tablaPartners[r]="ATOS SPAIN";
+        if (tablaPartners[r].indexOf("Avalora Tecnolog")>=0) tablaPartners[r]="AVALORA";
+        if (tablaPartners[r].indexOf("TELEFONICA")>=0) tablaPartners[r]="TELEFONICA";
+        if (tablaPartners[r].indexOf("SAYTEL Soluciones")>=0) tablaPartners[r]="SAYTEL";
+        if (tablaPartners[r].indexOf("INDRA")>=0) tablaPartners[r]="INDRA";
+        if (tablaPartners[r].indexOf("EINZELNET")>=0) tablaPartners[r]="EINZELNET";
+        if (tablaPartners[r].indexOf("Sothis")>=0) tablaPartners[r]="SOTHIS";
+     }
+    return tablaPartners;
+}
+        
+        //*********************************************************************************************
+        // Función CalculaFecha()
+        //      Escribe en la esquina superior derecha, en el label 'fechaActual', el día del FY 
+        //      en formato:   FY15-Q1-M1-W1-d (d sería el día de la semana, domingo=1, lunes=2...)
+        //*********************************************************************************************
+
+        function CalculaFecha() {
+
+            var currentDate = new Date();
+            var day = currentDate.toLocaleDateString();
+            document.getElementById("fechaActual").innerHTML = TablaDiaFY[parseInt((currentDate-inicioFY)/1000/60/60/24)];
+            //FiltrarDatos();
+        }
+
+        //*********************************************************************************************
+        // FIN DE LA FUNCION 
+        //*********************************************************************************************
+
+        //*********************************************************************************************
+        // Función CalculaTarget()
+        //      Modifica el valor del target sobre el que se calculan Actuals y Forecast del año.
+        //      Tiene en cuenta los siguientes parámetros:
+        //          - Periodo (se considera Seasonality y ponderación de cada mes), SCSM y productos seleccionados
+        //*********************************************************************************************
+
+        function CalculaTarget() {
+            
+            var alcance_target = "(Todo DC)";
+            var SCMS_target = "(Spain)";
+            var Tech_target = "(All)";
+            var t_UCS_ENT = ConvertStrKtoInt(document.getElementById("target_UCS_ENT").innerHTML,2);
+            var t_UCS_PUB = ConvertStrKtoInt(document.getElementById("target_UCS_PUB").innerHTML,2);
+            var t_UCS_COM = ConvertStrKtoInt(document.getElementById("target_UCS_COM").innerHTML,2);
+            var t_N9K_ENT = ConvertStrKtoInt(document.getElementById("target_N9K_ENT").innerHTML,2);
+            var t_N9K_PUB = ConvertStrKtoInt(document.getElementById("target_N9K_PUB").innerHTML,2);
+            var t_N9K_COM = ConvertStrKtoInt(document.getElementById("target_N9K_COM").innerHTML,2);
+            var t_NEX_ENT = ConvertStrKtoInt(document.getElementById("target_NEX_ENT").innerHTML,2);
+            var t_NEX_PUB = ConvertStrKtoInt(document.getElementById("target_NEX_PUB").innerHTML,2);
+            var t_NEX_COM = ConvertStrKtoInt(document.getElementById("target_NEX_COM").innerHTML,2);
+            var t_SAN_ENT = ConvertStrKtoInt(document.getElementById("target_SAN_ENT").innerHTML,2);
+            var t_SAN_PUB = ConvertStrKtoInt(document.getElementById("target_SAN_PUB").innerHTML,2);
+            var t_SAN_COM = ConvertStrKtoInt(document.getElementById("target_SAN_COM").innerHTML,2);
+            
+            var t_UCS_SPAIN = ConvertStrKtoInt(document.getElementById("target_UCS_SPAIN").innerHTML,2);
+            var t_N9K_SPAIN = ConvertStrKtoInt(document.getElementById("target_N9K_SPAIN").innerHTML,2);
+            var t_NEX_SPAIN = ConvertStrKtoInt(document.getElementById("target_NEX_SPAIN").innerHTML,2);
+            var t_SAN_SPAIN = ConvertStrKtoInt(document.getElementById("target_SAN_SPAIN").innerHTML,2);
+            
+            
+            var sQ1= parseFloat(ConvertStrKtoInt(document.getElementById("s_Q1").innerHTML,1))/10000;
+            var sQ2= parseFloat(ConvertStrKtoInt(document.getElementById("s_Q2").innerHTML,1))/10000;
+            var sQ3= parseFloat(ConvertStrKtoInt(document.getElementById("s_Q3").innerHTML,1))/10000;
+            var sQ4= parseFloat(ConvertStrKtoInt(document.getElementById("s_Q4").innerHTML,1))/10000;
+            var t_seasonality = [sQ1,sQ2,sQ3,sQ4];
+            var todo = t_UCS_ENT+t_UCS_PUB+t_UCS_COM+t_N9K_ENT+t_N9K_PUB+t_N9K_COM+t_NEX_ENT+t_NEX_PUB+t_NEX_COM+t_SAN_ENT+t_SAN_PUB+t_SAN_COM;
+            var todoUCS = t_UCS_ENT + t_UCS_PUB + t_UCS_COM;
+            var todoN9K = t_N9K_ENT + t_N9K_PUB + t_N9K_COM;
+            var todoNEX = t_NEX_ENT + t_NEX_PUB + t_NEX_COM;
+            var todoSAN = t_SAN_ENT + t_SAN_PUB + t_SAN_COM;
+             todoUCS = t_UCS_SPAIN;
+             todoN9K = t_N9K_SPAIN;
+             todoNEX = t_NEX_SPAIN;
+             todoSAN = t_SAN_SPAIN;
+            var periodo = document.getElementById("FechaSelect");
+            periodo = periodo.options[periodo.selectedIndex].innerHTML;
+            if (document.getElementById("btn_E").classList.contains('activeSCMS') && document.getElementById("btn_P").classList.contains('activeSCMS') && document.getElementById("btn_C").classList.contains('activeSCMS')){
+                SCMS_target = "(Spain)";
+            } else {
+                SCMS_target = "(";
+                if (document.getElementById("btn_E").classList.contains('activeSCMS'))
+                    SCMS_target = SCMS_target + "E";
+                if (document.getElementById("btn_P").classList.contains('activeSCMS'))
+                    SCMS_target = SCMS_target + "P";
+                if (document.getElementById("btn_C").classList.contains('activeSCMS'))
+                    SCMS_target = SCMS_target + "C";
+                SCMS_target = SCMS_target + ")";    
+            }
+            if (document.getElementById("btn_UCS").classList.contains('activeTech') && document.getElementById("btn_N9K").classList.contains('activeTech') && document.getElementById("btn_NEX").classList.contains('activeTech') && document.getElementById("btn_MDS").classList.contains('activeTech')){
+                Tech_target = "(All T)";
+            } else {
+                Tech_target = "(";
+                if (document.getElementById("btn_UCS").classList.contains('activeTech'))
+                    Tech_target = Tech_target + "U";
+                if (document.getElementById("btn_N9K").classList.contains('activeTech'))
+                    Tech_target = Tech_target + "9";
+                if (document.getElementById("btn_NEX").classList.contains('activeTech'))
+                    Tech_target = Tech_target + "N";
+                if (document.getElementById("btn_MDS").classList.contains('activeTech'))
+                    Tech_target = Tech_target + "M";
+                Tech_target = Tech_target + ")";    
+            }
+            if(SCMS_target == "(Spain)" && Tech_target == "(All T)"){
+                        target = todo;
+                    } else {
+                        target = 0;
+                        if(SCMS_target.indexOf("Spain")>=0){
+                            if(Tech_target.indexOf("U")>=0) target = target + todoUCS;
+                            if(Tech_target.indexOf("9")>=0) target = target + todoN9K;
+                            if(Tech_target.indexOf("N")>=0) target = target + todoNEX;
+                            if(Tech_target.indexOf("M")>=0) target = target + todoSAN;
+                        }
+                        if(SCMS_target.indexOf("E")>=0){
+                            if(Tech_target.indexOf("All")>=0) target = target + t_UCS_ENT + t_N9K_ENT + t_NEX_ENT + t_SAN_ENT;
+                            if(Tech_target.indexOf("U")>=0) target = target + t_UCS_ENT;
+                            if(Tech_target.indexOf("9")>=0) target = target + t_N9K_ENT;
+                            if(Tech_target.indexOf("N")>=0) target = target + t_NEX_ENT;
+                            if(Tech_target.indexOf("M")>=0) target = target + t_SAN_ENT;
+                        }
+                        if(SCMS_target.indexOf("P")>=0){
+                            if(Tech_target.indexOf("All")>=0) target = target + t_UCS_PUB + t_N9K_PUB + t_NEX_PUB + t_SAN_PUB;
+                            if(Tech_target.indexOf("U")>=0) target = target + t_UCS_PUB;
+                            if(Tech_target.indexOf("9")>=0) target = target + t_N9K_PUB;
+                            if(Tech_target.indexOf("N")>=0) target = target + t_NEX_PUB;
+                            if(Tech_target.indexOf("M")>=0) target = target + t_SAN_PUB;
+                        }
+                        if(SCMS_target.indexOf("C")>=0){
+                            if(Tech_target.indexOf("All")>=0) target = target + t_UCS_COM + t_N9K_COM + t_NEX_COM + t_SAN_COM;
+                            if(Tech_target.indexOf("U")>=0) target = target + t_UCS_COM;
+                            if(Tech_target.indexOf("9")>=0) target = target + t_N9K_COM;
+                            if(Tech_target.indexOf("N")>=0) target = target + t_NEX_COM;
+                            if(Tech_target.indexOf("M")>=0) target = target + t_SAN_COM;
+                        }
+                    }
+            //alert(target);
+            switch (periodo.length){
+                case 4: // periodo FY
+                    alcance_target = SCMS_target + Tech_target + "(FY)";
+                    periodoGrafica=periodo.substring(0,4);
+                    break;
+                case 7: // periodo Quarter
+                    var t=(periodo.substring(6,7));
+                    target = target * t_seasonality[parseInt(periodo.substring(6,7))-1];
+                    alcance_target = SCMS_target + Tech_target + "(Q"+t+")";
+                    periodoGrafica="Q"+t;
+                    break;
+                case 10: // periodo Month
+                    var t1=(periodo.substring(6,7));
+                    var t2=(periodo.substring(9,10));
+                    target = target * t_seasonality[parseInt(periodo.substring(6,7)-1)];
+                    periodoGrafica="Q"+t1+"-M"+t2;
+                    switch (parseInt(t2)){
+                        case 1:
+                            target = target*0.2;
+                            alcance_target = SCMS_target + Tech_target + "(Q"+t1+"-M"+t2+")";
+                            break;
+                        case 2:
+                            target = target*0.3;
+                            alcance_target = SCMS_target + Tech_target + "(Q"+t1+"-M"+t2+")";
+                            break;
+                        case 3:
+                            target = target*0.5;
+                            alcance_target = SCMS_target + Tech_target + "(Q"+t1+"-M"+t2+")";
+                            break;
+                        default:
+                        break;
+                    }
+                    break;
+                case 13: // periodo Week
+                    var t1=(periodo.substring(6,7));
+                    var t2=(periodo.substring(9,10));
+                    target = target * t_seasonality[parseInt(periodo.substring(6,7)-1)];
+                    periodoGrafica="Q"+t1+"-M"+t2;
+                    switch (parseInt(t2)){
+                        case 1:
+                            target = target*0.2;
+                            alcance_target = SCMS_target + Tech_target + "(Q"+t1+"-M"+t2+")";
+                            break;
+                        case 2:
+                            target = target*0.3;
+                            alcance_target = SCMS_target + Tech_target + "(Q"+t1+"-M"+t2+")";
+                            break;
+                        case 3:
+                            target = target*0.5;
+                            alcance_target = SCMS_target + Tech_target + "(Q"+t1+"-M"+t2+")";
+                            break;
+                        default:
+                        break;
+                    }
+                    break;
+                default:
+            }
+            document.getElementById("lbl_target").innerHTML = "Target " + alcance_target + ": " + Math.round(target) + " K";
+            target = 1000 * target;
+        }
+        
+       
+        
+        
+        
+        function TargetFY() {
+            var FYtarget;
+            var alcance_target = "(Todo DC)";
+            var SCMS_target = "(Spain)";
+            var Tech_target = "(All)";
+            var t_UCS_ENT = ConvertStrKtoInt(document.getElementById("target_UCS_ENT").innerHTML,2);
+            var t_UCS_PUB = ConvertStrKtoInt(document.getElementById("target_UCS_PUB").innerHTML,2);
+            var t_UCS_COM = ConvertStrKtoInt(document.getElementById("target_UCS_COM").innerHTML,2);
+            var t_N9K_ENT = ConvertStrKtoInt(document.getElementById("target_N9K_ENT").innerHTML,2);
+            var t_N9K_PUB = ConvertStrKtoInt(document.getElementById("target_N9K_PUB").innerHTML,2);
+            var t_N9K_COM = ConvertStrKtoInt(document.getElementById("target_N9K_COM").innerHTML,2);
+            var t_NEX_ENT = ConvertStrKtoInt(document.getElementById("target_NEX_ENT").innerHTML,2);
+            var t_NEX_PUB = ConvertStrKtoInt(document.getElementById("target_NEX_PUB").innerHTML,2);
+            var t_NEX_COM = ConvertStrKtoInt(document.getElementById("target_NEX_COM").innerHTML,2);
+            var t_SAN_ENT = ConvertStrKtoInt(document.getElementById("target_SAN_ENT").innerHTML,2);
+            var t_SAN_PUB = ConvertStrKtoInt(document.getElementById("target_SAN_PUB").innerHTML,2);
+            var t_SAN_COM = ConvertStrKtoInt(document.getElementById("target_SAN_COM").innerHTML,2);
+            var sQ1= parseFloat(ConvertStrKtoInt(document.getElementById("s_Q1").innerHTML,1))/10000;
+            var sQ2= parseFloat(ConvertStrKtoInt(document.getElementById("s_Q2").innerHTML,1))/10000;
+            var sQ3= parseFloat(ConvertStrKtoInt(document.getElementById("s_Q3").innerHTML,1))/10000;
+            var sQ4= parseFloat(ConvertStrKtoInt(document.getElementById("s_Q4").innerHTML,1))/10000;
+            var t_seasonality = [sQ1,sQ2,sQ3,sQ4];
+            var todo = t_UCS_ENT+t_UCS_PUB+t_UCS_COM+t_N9K_ENT+t_N9K_PUB+t_N9K_COM+t_NEX_ENT+t_NEX_PUB+t_NEX_COM+t_SAN_ENT+t_SAN_PUB+t_SAN_COM;
+            var todoUCS = t_UCS_ENT + t_UCS_PUB + t_UCS_COM;
+            var todoN9K = t_N9K_ENT + t_N9K_PUB + t_N9K_COM;
+            var todoNEX = t_NEX_ENT + t_NEX_PUB + t_NEX_COM;
+            var todoSAN = t_SAN_ENT + t_SAN_PUB + t_SAN_COM;
+            
+            if (document.getElementById("btn_E").classList.contains('activeSCMS') && document.getElementById("btn_P").classList.contains('activeSCMS') && document.getElementById("btn_C").classList.contains('activeSCMS')){
+                SCMS_target = "(Spain)";
+            } else {
+                SCMS_target = "(";
+                if (document.getElementById("btn_E").classList.contains('activeSCMS'))
+                    SCMS_target = SCMS_target + "E";
+                if (document.getElementById("btn_P").classList.contains('activeSCMS'))
+                    SCMS_target = SCMS_target + "P";
+                if (document.getElementById("btn_C").classList.contains('activeSCMS'))
+                    SCMS_target = SCMS_target + "C";
+                SCMS_target = SCMS_target + ")";    
+            }
+            if (document.getElementById("btn_UCS").classList.contains('activeTech') && document.getElementById("btn_N9K").classList.contains('activeTech') && document.getElementById("btn_NEX").classList.contains('activeTech') && document.getElementById("btn_MDS").classList.contains('activeTech')){
+                Tech_target = "(All T)";
+            } else {
+                Tech_target = "(";
+                if (document.getElementById("btn_UCS").classList.contains('activeTech'))
+                    Tech_target = Tech_target + "U";
+                if (document.getElementById("btn_N9K").classList.contains('activeTech'))
+                    Tech_target = Tech_target + "9";
+                if (document.getElementById("btn_NEX").classList.contains('activeTech'))
+                    Tech_target = Tech_target + "N";
+                if (document.getElementById("btn_MDS").classList.contains('activeTech'))
+                    Tech_target = Tech_target + "M";
+                Tech_target = Tech_target + ")";    
+            }
+            if(SCMS_target == "(Spain)" && Tech_target == "(All T)"){
+                        FYtarget = todo;
+                    } else {
+                        FYtarget = 0;
+                        if(SCMS_target.indexOf("Spain")>=0){
+                            if(Tech_target.indexOf("U")>=0) FYtarget = FYtarget + todoUCS;
+                            if(Tech_target.indexOf("9")>=0) FYtarget = FYtarget + todoN9K;
+                            if(Tech_target.indexOf("N")>=0) FYtarget = FYtarget + todoNEX;
+                            if(Tech_target.indexOf("M")>=0) FYtarget = FYtarget + todoSAN;
+                        }
+                        if(SCMS_target.indexOf("E")>=0){
+                            if(Tech_target.indexOf("All")>=0) FYtarget = FYtarget + t_UCS_ENT + t_N9K_ENT + t_NEX_ENT + t_SAN_ENT;
+                            if(Tech_target.indexOf("U")>=0) FYtarget = FYtarget + t_UCS_ENT;
+                            if(Tech_target.indexOf("9")>=0) FYtarget = FYtarget + t_N9K_ENT;
+                            if(Tech_target.indexOf("N")>=0) FYtarget = FYtarget + t_NEX_ENT;
+                            if(Tech_target.indexOf("M")>=0) FYtarget = FYtarget + t_SAN_ENT;
+                        }
+                        if(SCMS_target.indexOf("P")>=0){
+                            if(Tech_target.indexOf("All")>=0) FYtarget = FYtarget + t_UCS_PUB + t_N9K_PUB + t_NEX_PUB + t_SAN_PUB;
+                            if(Tech_target.indexOf("U")>=0) FYtarget = FYtarget + t_UCS_PUB;
+                            if(Tech_target.indexOf("9")>=0) FYtarget = FYtarget + t_N9K_PUB;
+                            if(Tech_target.indexOf("N")>=0) FYtarget = FYtarget + t_NEX_PUB;
+                            if(Tech_target.indexOf("M")>=0) FYtarget = FYtarget + t_SAN_PUB;
+                        }
+                        if(SCMS_target.indexOf("C")>=0){
+                            if(Tech_target.indexOf("All")>=0) FYtarget = FYtarget + t_UCS_COM + t_N9K_COM + t_NEX_COM + t_SAN_COM;
+                            if(Tech_target.indexOf("U")>=0) FYtarget = FYtarget + t_UCS_COM;
+                            if(Tech_target.indexOf("9")>=0) FYtarget = FYtarget + t_N9K_COM;
+                            if(Tech_target.indexOf("N")>=0) FYtarget = FYtarget + t_NEX_COM;
+                            if(Tech_target.indexOf("M")>=0) FYtarget = FYtarget + t_SAN_COM;
+                        }
+                    }
+            
+                    alcance_target = SCMS_target + Tech_target + "(FY)";
+                    //periodoGrafica="FY15";
+            
+            FYtarget = 1000 * FYtarget;
+            return(FYtarget);
+        }
+        
+function TargetFY_SCMS() {
+            var FYtarget_SCMS;
+            var alcance_target = "(Todo DC)";
+            var SCMS_target = "(Spain)";
+            var Tech_target = "(All)";
+            var t_UCS_ENT = ConvertStrKtoInt(document.getElementById("target_UCS_ENT").innerHTML,2);
+            var t_UCS_PUB = ConvertStrKtoInt(document.getElementById("target_UCS_PUB").innerHTML,2);
+            var t_UCS_COM = ConvertStrKtoInt(document.getElementById("target_UCS_COM").innerHTML,2);
+            var t_N9K_ENT = ConvertStrKtoInt(document.getElementById("target_N9K_ENT").innerHTML,2);
+            var t_N9K_PUB = ConvertStrKtoInt(document.getElementById("target_N9K_PUB").innerHTML,2);
+            var t_N9K_COM = ConvertStrKtoInt(document.getElementById("target_N9K_COM").innerHTML,2);
+            var t_NEX_ENT = ConvertStrKtoInt(document.getElementById("target_NEX_ENT").innerHTML,2);
+            var t_NEX_PUB = ConvertStrKtoInt(document.getElementById("target_NEX_PUB").innerHTML,2);
+            var t_NEX_COM = ConvertStrKtoInt(document.getElementById("target_NEX_COM").innerHTML,2);
+            var t_SAN_ENT = ConvertStrKtoInt(document.getElementById("target_SAN_ENT").innerHTML,2);
+            var t_SAN_PUB = ConvertStrKtoInt(document.getElementById("target_SAN_PUB").innerHTML,2);
+            var t_SAN_COM = ConvertStrKtoInt(document.getElementById("target_SAN_COM").innerHTML,2);
+            var sQ1= parseFloat(ConvertStrKtoInt(document.getElementById("s_Q1").innerHTML,1))/10000;
+            var sQ2= parseFloat(ConvertStrKtoInt(document.getElementById("s_Q2").innerHTML,1))/10000;
+            var sQ3= parseFloat(ConvertStrKtoInt(document.getElementById("s_Q3").innerHTML,1))/10000;
+            var sQ4= parseFloat(ConvertStrKtoInt(document.getElementById("s_Q4").innerHTML,1))/10000;
+            var t_seasonality = [sQ1,sQ2,sQ3,sQ4];
+            var todo = t_UCS_ENT+t_UCS_PUB+t_UCS_COM+t_N9K_ENT+t_N9K_PUB+t_N9K_COM+t_NEX_ENT+t_NEX_PUB+t_NEX_COM+t_SAN_ENT+t_SAN_PUB+t_SAN_COM;
+            var todoUCS = t_UCS_ENT + t_UCS_PUB + t_UCS_COM;
+            var todoN9K = t_N9K_ENT + t_N9K_PUB + t_N9K_COM;
+            var todoNEX = t_NEX_ENT + t_NEX_PUB + t_NEX_COM;
+            var todoSAN = t_SAN_ENT + t_SAN_PUB + t_SAN_COM;
+            
+            if (document.getElementById("btn_E").classList.contains('activeSCMS') && document.getElementById("btn_P").classList.contains('activeSCMS') && document.getElementById("btn_C").classList.contains('activeSCMS')){
+                SCMS_target = "(Spain)";
+            } else {
+                SCMS_target = "(";
+                if (document.getElementById("btn_E").classList.contains('activeSCMS'))
+                    SCMS_target = SCMS_target + "E";
+                if (document.getElementById("btn_P").classList.contains('activeSCMS'))
+                    SCMS_target = SCMS_target + "P";
+                if (document.getElementById("btn_C").classList.contains('activeSCMS'))
+                    SCMS_target = SCMS_target + "C";
+                SCMS_target = SCMS_target + ")";    
+            }
+    
+            if (document.getElementById("btn_UCS").classList.contains('activeTech') && document.getElementById("btn_N9K").classList.contains('activeTech') && document.getElementById("btn_NEX").classList.contains('activeTech') && document.getElementById("btn_MDS").classList.contains('activeTech')){
+                Tech_target = "(All T)";
+            } else {
+                Tech_target = "(";
+                if (document.getElementById("btn_UCS").classList.contains('activeTech'))
+                    Tech_target = Tech_target + "U";
+                if (document.getElementById("btn_N9K").classList.contains('activeTech'))
+                    Tech_target = Tech_target + "9";
+                if (document.getElementById("btn_NEX").classList.contains('activeTech'))
+                    Tech_target = Tech_target + "N";
+                if (document.getElementById("btn_MDS").classList.contains('activeTech'))
+                    Tech_target = Tech_target + "M";
+                Tech_target = Tech_target + ")";    
+            }
+            if(Tech_target == "(All T)"){
+                        FYtarget_SCMS = [t_UCS_ENT+t_N9K_ENT+t_NEX_ENT+t_SAN_ENT,t_UCS_PUB+t_N9K_PUB+t_NEX_PUB+t_SAN_PUB,t_UCS_COM+t_N9K_COM+t_NEX_COM+t_SAN_COM];
+                
+                    } else {
+                        FYtarget_SCMS = [0,0,0];
+
+                        if(Tech_target.indexOf("U")>=0) {
+                            FYtarget_SCMS[0] = FYtarget_SCMS[0] + t_UCS_ENT;
+                            FYtarget_SCMS[1] = FYtarget_SCMS[1] + t_UCS_PUB;
+                            FYtarget_SCMS[2] = FYtarget_SCMS[2] + t_UCS_COM;
+                        }
+                        if(Tech_target.indexOf("9")>=0) {
+                            FYtarget_SCMS[0] = FYtarget_SCMS[0] + t_N9K_ENT;
+                            FYtarget_SCMS[1] = FYtarget_SCMS[1] + t_N9K_PUB;
+                            FYtarget_SCMS[2] = FYtarget_SCMS[2] + t_N9K_COM;
+                        }
+                        if(Tech_target.indexOf("N")>=0) {
+                            FYtarget_SCMS[0] = FYtarget_SCMS[0] + t_NEX_ENT;
+                            FYtarget_SCMS[1] = FYtarget_SCMS[1] + t_NEX_PUB;
+                            FYtarget_SCMS[2] = FYtarget_SCMS[2] + t_NEX_COM;
+                        }
+                        if(Tech_target.indexOf("M")>=0) {
+                            FYtarget_SCMS[0] = FYtarget_SCMS[0] + t_SAN_ENT;
+                            FYtarget_SCMS[1] = FYtarget_SCMS[1] + t_SAN_PUB;
+                            FYtarget_SCMS[2] = FYtarget_SCMS[2] + t_SAN_COM;
+                        }
+                    }
+            
+            FYtarget_SCMS[0] = 1000 * FYtarget_SCMS[0];
+            FYtarget_SCMS[1] = 1000 * FYtarget_SCMS[1];
+            FYtarget_SCMS[2] = 1000 * FYtarget_SCMS[2];
+            return(FYtarget_SCMS);
+        }
+        
+        
+        function ConvertStrKtoInt(valor, nSufijos){
+            valor = valor.replace(/\$|\,/g,'');
+            valor = valor.substring(0,valor.length-nSufijos);
+            valor = parseInt(valor);
+            return valor;
+        }
+
+        //*********************************************************************************************
+        // FIN DE LA FUNCION 
+        //*********************************************************************************************
+
+        function myButtonMENOS_onclick() {
+            cambiaEscala =true;
+            CalculaTarget();
+            if(porcentage_max<300)
+                porcentage_max = porcentage_max + 25;
+            escala = porcentage_max/25;
+            
+            Refresh_ALLGraphs();
+            
+        }
+        function myButtonMAS_onclick() {
+            cambiaEscala = true;
+            CalculaTarget();
+            if(porcentage_max>25)
+                porcentage_max = porcentage_max - 25;
+            escala = porcentage_max/25;
+            
+            Refresh_ALLGraphs();  
+            
+        }
+
+//MIPROPIEDAD.style.backgroundColor == "#3A89D3"
+
+function index_up(){
+    var selector = document.getElementById("FechaSelect");
+    if(selector.selectedIndex>0)
+        selector.selectedIndex = selector.selectedIndex - 1;
+}
+
+function index_down(){
+    var selector = document.getElementById("FechaSelect");
+    if(selector.selectedIndex<selector.options.length-1)
+        selector.selectedIndex = selector.selectedIndex + 1;
+}
+
+function setColorSCMS(e) {
+    var kk = document.getElementById("btn_Spain");
+    var target = e.target,
+        statusSCMS = e.target.classList.contains('activeSCMS');
+    e.target.classList.add(statusSCMS ? 'inactiveSCMS' : 'activeSCMS');
+    e.target.classList.remove(statusSCMS ? 'activeSCMS' : 'inactiveSCMS');
+    if (target == kk && kk.classList.contains('activeSCMS')){
+        document.getElementById("btn_E").classList.remove('inactiveSCMS');
+        document.getElementById("btn_E").classList.add('activeSCMS');
+        document.getElementById("btn_P").classList.remove('inactiveSCMS');
+        document.getElementById("btn_P").classList.add('activeSCMS');
+        document.getElementById("btn_C").classList.remove('inactiveSCMS');
+        document.getElementById("btn_C").classList.add('activeSCMS');
+    }
+    if (document.getElementById("btn_E").classList.contains('activeSCMS') && document.getElementById("btn_P").classList.contains('activeSCMS') && document.getElementById("btn_C").classList.contains('activeSCMS')){
+        kk.classList.remove('inactiveSCMS');
+        kk.classList.add('activeSCMS');
+    } else {
+        kk.classList.remove('activeSCMS');
+        kk.classList.add('inactiveSCMS');
+    }
+}
+
+function setColorTech(e) {
+    var kk = document.getElementById("btn_Tech");
+    var target = e.target,
+        statusTech = e.target.classList.contains('activeTech');
+    e.target.classList.add(statusTech ? 'inactiveTech' : 'activeTech');
+    e.target.classList.remove(statusTech ? 'activeTech' : 'inactiveTech');
+    if (target == kk && kk.classList.contains('activeTech')){
+        document.getElementById("btn_UCS").classList.remove('inactiveTech');
+        document.getElementById("btn_UCS").classList.add('activeTech');
+        document.getElementById("btn_N9K").classList.remove('inactiveTech');
+        document.getElementById("btn_N9K").classList.add('activeTech');
+        document.getElementById("btn_NEX").classList.remove('inactiveTech');
+        document.getElementById("btn_NEX").classList.add('activeTech');
+        document.getElementById("btn_MDS").classList.remove('inactiveTech');
+        document.getElementById("btn_MDS").classList.add('activeTech');
+    }
+    if (document.getElementById("btn_UCS").classList.contains('activeTech') && document.getElementById("btn_N9K").classList.contains('activeTech') && document.getElementById("btn_NEX").classList.contains('activeTech') && document.getElementById("btn_MDS").classList.contains('activeTech')){
+        kk.classList.remove('inactiveTech');
+        kk.classList.add('activeTech');
+    } else {
+        kk.classList.remove('activeTech');
+        kk.classList.add('inactiveTech');
+    }
+}
+
+function setColorFecha(e) {
+
+    document.getElementById("btn_Week").classList.remove('active');
+    document.getElementById("btn_Month").classList.remove('active');
+    document.getElementById("btn_Q").classList.remove('active');
+    document.getElementById("btn_FY").classList.remove('active');
+    var target = e.target,
+        status = e.target.classList.contains('active');
+    e.target.classList.add(status ? 'inactive' : 'active');
+    e.target.classList.remove(status ? 'active' : 'inactive');
+    CambiaComboFecha();
+}
+
+function CambiaComboFecha() {     
+    var selector = document.getElementById("FechaSelect");
+    var hoy = document.getElementById("fechaActual").innerHTML;
+
+    if (document.getElementById("btn_Week").classList.contains('active'))
+    {
+        selector.options.length = 0;
+        for(i=0;i<52;i++){
+            selector.options[i] = new Option(TablaFechasWeek[i], TablaFechasWeek[i], false, false);
+            if(hoy.substring(0,13)==selector.options[i].value)
+                selector.selectedIndex = i;
+        }
+    }
+
+    if (document.getElementById("btn_Month").classList.contains('active'))
+    {
+       selector.options.length = 0;
+        for(i=0;i<12;i++){
+            selector.options[i] = new Option(TablaFechasMonth[i], TablaFechasMonth[i], false, false);
+            if(hoy.substring(0,10)==selector.options[i].value)
+                selector.selectedIndex = i;
+        }
+    }
+    if (document.getElementById("btn_Q").classList.contains('active'))
+    {
+       selector.options.length = 0;
+        for(i=0;i<12;i++){
+            selector.options[i] = new Option(TablaFechasQuarter[i], TablaFechasQuarter[i], false, false);
+            if(hoy.substring(0,7)==selector.options[i].value)
+                selector.selectedIndex = i;
+        }
+    }
+    if (document.getElementById("btn_FY").classList.contains('active'))
+    {
+       selector.options.length = 0;
+        for(i=0;i<12;i++){
+            selector.options[i] = new Option(TablaFechasFY[i], TablaFechasFY[i], false, false);
+            if(hoy.substring(0,4)==selector.options[i].value)
+                selector.selectedIndex = i;
+        }
+    }
+
+
+}
+
+function DescargaFicheros() {
+    app.system("osascript '/Users/gamaestr/Library/Scripts/downloader/abacodownloader'");
+}        
+        
+</script>
+
+</head>
+<body>
+        <!-- Cabecera y espacio de carga de ficheros XLS (DROP) -->
+        <table style="margin-top: 0px">
+        <tr>
+            <td style="width=900px; padding: 0 0px 0 0px;"><img style="margin-top: 4px" src="Cisco_cabecera_short.png"></td>
+            <td id="drop" style="margin-top: 20px; padding: 16px 0px 16px 0px;">(DROP) Cargar fichero de datos<br>XLSX/XLSM/XLSB/ODS/XLS/XML</td> 
+        </tr>
+        </table>
+        <!-- Contenedor Filtro y Gráfica principal -->
+        <form>
+            <div class="contenedor" style="margin-top: 0px">
+            
+                
+                <table style="margin-top: 0px; margin-botton: -10px">
+                    <tr>
+                    <td style="width; 120px">
+                        <label style="margin-left: -6px">Umbral=</label>
+                        <input type="number" id="elUmbral" style="margin-left: 1px; width: 40px" value=100 />
+                        <label style="margin-left: 1px">K</label>
+                        <br>
+                        <select style="width: 110px">
+                            <option value="All">All Partners</option>
+                            <option value="UCS">Acuntia</option>
+                            <option value="Invicta">IPM</option>
+                            <option value="Nexus">Logicalis</option>
+                            <option value="N9K">IECI</option>
+                            <option value="MDS">SCC</option>
+                            <option value="All">Indra</option>
+                            <option value="UCS">Dimension Data</option>
+                            <option value="Invicta">Tecnocom</option>
+                            <option value="Nexus">Einzelnet</option>
+                            <option value="N9K">Grupo Seidor</option>
+                            <option value="MDS">Telefónica</option>
+                        </select>
+                    </td>
+                    <td></td>
+                    <td style="width; 85px">
+                        <button style="margin-left: -1px; width: 60px" type="button" id="btn_Spain" onclick="setColorSCMS(event)">Spain</button>
+                        <button style="margin-left: -1px; width: 15px" type="button" id="btn_E" onclick="setColorSCMS(event)">E</button>
+                        <button style="width: 15px" type="button" id="btn_P" onclick="setColorSCMS(event)">P</button>
+                        <button style="width: 15px" type="button" id="btn_C" onclick="setColorSCMS(event)">C</button>            
+                    </td>
+                    <td style="width; 185px" colspan="3">
+                        <button style="width: 150px" type="button" value="DC" id="btn_Tech" onclick="setColorTech(event)">All Tech</button>
+                        <button style="width: 30px" type="button" value="UCS" id="btn_UCS" onclick="setColorTech(event)">UCS</button>
+                        <button style="width: 30px" type="button" value="N9K" id="btn_N9K" onclick="setColorTech(event)">N9K</button>
+                        <button style="width: 30px" type="button" value="Nexus" id="btn_NEX" onclick="setColorTech(event)">NEX</button>
+                        <button style="width: 30px" type="button" value="MDS" id="btn_MDS" onclick="setColorTech(event)">MDS</button>
+                    </td>
+                    <td></td>
+                      <td style="width: 284px; padding: 0 0 0 0">
+                        <button type="button" style="margin-left: 50px" id="btn_Week" onclick="setColorFecha(event)">Week</button>
+                        <button type="button" id="btn_Month" onclick="setColorFecha(event)">Month</button>
+                        <button type="button" id="btn_Q" onclick="setColorFecha(event)">Quarter</button>
+                        <button type="button" id="btn_FY" onclick="setColorFecha(event)">FY</button><br><br>
+                    </td>
+                    <td style="width:10px; padding: 0 0 0 0">
+                        
+                    </td>
+                    <td>
+                    <select id="FechaSelect" style="margin-left: -1px; width: 120px">
+                        <option value="FY15">FY15-Q3-M3-W2</option>
+                        <option value="FY14">FY15-Q3-M3</option>
+                        <option value="FY13">FY15-Q3</option>
+                        <option value="FY12">FY15</option>
+                    </select>
+                    <input id="BuscaBOX" style="margin-left: 20px" type="search" class="LOLOlight-table-filter" data-table="display" placeholder="Buscar..." />
+                    <label style="margin-right: 20px">Week: <b id="fechaActual" >FY15-Q3-M3-W2</b></label>
+                    
+                        <input id='boton_menos' style="margin-left: 20px" type="button" VALUE='<' class="btn btn-xs btn-info" onclick="myButtonMENOS_onclick()" >
+                        <input id='boton_mas' type="button" value=">" class="btn btn-xs btn-info" onclick="myButtonMAS_onclick()" >
+                        <br><br>
+                    </td>
+                    </tr>
+                    <tr>
+                    <td>
+                        <form action="demo_form.asp" method="get">
+                            <input class="stageFilter" type="checkbox" name="SCMS" value="1 - Prospect" checked> 1.- Prospect<br>
+                            <input class="stageFilter" type="checkbox" name="SCMS" value="2 - Qualification" checked> 2.- Qualification<br>
+                            <input class="stageFilter" type="checkbox" name="SCMS" value="3 - Proposal" checked> 3.- Proposal<br>
+                            <input class="stageFilter" type="checkbox" name="SCMS" value="4 - Agreement" checked> 4.- Agreement<br>
+                            <input class="stageFilter" type="checkbox" name="SCMS" value="5 - Closing" checked> 5.- Closing<br>
+                            <input class="stageFilter" type="checkbox" name="SCMS" value="6 - Booked" checked> 6.- Booked<br>
+                        </form>
+                    </td>
+                    <td></td>
+                    <td>
+                        <fieldset style="width: 4px; border:1px solid #666; margin-left: 28px; margin-top: 3px; background-color: #008800"></fieldset>
+                        <fieldset style="width: 4px; border:1px solid #666; margin-left: 28px; margin-top: 9px; margin-bottom: 10px; background-color: #50cc50 "></fieldset>
+                        <fieldset style="width: 4px; border:1px solid #666; margin-left: 28px; margin-top: 9px; margin-bottom: 10px; background-color: #eeee55 "></fieldset>
+                        <fieldset style="width: 4px; border:1px solid #666; margin-left: 28px; margin-top: 9px; background-color: #9b0000 "></fieldset>
+                    </td>
+                    <td>
+                        
+                        <form style="margin-top: 3px;" action="demo_form.asp" method="get">
+                            <input class="statusFilter" style="margin-top: 0px; margin-left: -8px" type="checkbox" name="chkB" value="Booked" checked> Booked<br>
+                            <input class="statusFilter" style="margin-top: 6px; margin-left: -8px" type="checkbox" name="chkC" value="Commit" checked> Commit<br>
+                            <input class="statusFilter" style="margin-top: 6px; margin-left: -8px" type="checkbox" name="chkU" value="Upside" checked> Upside<br>
+                            <input class="statusFilter" style="margin-top: 6px; margin-left: -8px" type="checkbox" name="chkNF" value="NF" checked> Non For.<br>
+                        </form>
+                        
+                    </td>
+                    
+                    <td colspan="2"> 
+                        <b><label id="lbl_target" style="margin-top: -4px; margin-left: -190px;  
+                                      display:block; width:100; height:30; text-align:right">Target: 110.330.240 $</label></b>
+                        <label id="lbl_bookings" style="margin-top: 1px; display:block; width:100; height:30; text-align:right"> bookings</label>
+                        <label id="lbl_commit" style="margin-top: 0px;display:block; width:100; height:30; text-align:right"> commit</label>
+                        <label id="lbl_upside" style="margin-top: 0px;display:block; width:100; height:30; text-align:right"> upside</label>
+                        <label id="lbl_nf" style="margin-top: 0px;display:block; width:100; height:30; text-align:right"> nf</label><br>
+                        
+                    </td>
+                    
+                    <td colspan="4">
+                            <canvas id="cvs" width="952" height="140">[No canvas support]</canvas>
+                            <label id="Filtros" class="titulo" style="margin-left: 100px"></label><input style="margin-bottom: -20px; margin-left: 500px" type="checkbox" id="chkIAAS" value="SI" checked>Mostrar IaaS
+                    </td><td></td><td></td><td></td>
+                    </tr>
+                </table>
+                </div>
+              </form>
+        <p></p>
+<div class="contenedor">
+        <div class="titulo"></div>
+        <div id="pestanas">
+            <ul id=lista>
+                <li id="pestana1"><a href='javascript:cambiarPestanna(pestanas,pestana1);'>Datos</a></li>
+                <li id="pestana2"><a href='javascript:cambiarPestanna(pestanas,pestana2);'>Cuadro de Mando</a></li>
+                <li id="pestana3"><a href='javascript:cambiarPestanna(pestanas,pestana3);'>Cuadro de Mando Canal</a></li>
+                <li id="pestana4"><a href='javascript:cambiarPestanna(pestanas,pestana4);'>Cuadro de Mando Commercial</a></li>
+                <li id="pestana5"><a href='javascript:cambiarPestanna(pestanas,pestana5);'>Configuración y Targets</a></li>
+            </ul>
+        </div>
+    <body onload="javascript:cambiarPestanna(pestanas,pestana1);">
+ 
+        <div id="contenidopestanas">
+            <div id="cpestana1">
+               
+            </div>
+            <div id="cpestana2" style="marging-left: 20px">
+                <table>
+                    <tr>
+                    <button style="margin-left: -1px; width: 60px" type="button" id="btn_Files" onclick="DescargaFicheros()">FILES</button>
+                    <input style="margin-top: 0px; margin-left: 80px" type="checkbox" id="chkPeriodo" value="SI" checked>Mensual/Trimestral
+                    <input style="margin-top: 0px; margin-left: 40px" type="checkbox" id="chkPorcentage" value="SI" checked>Consecución/Facturación
+                    </tr>
+                    <tr>
+                    <td>
+                        <canvas id="cvs2" width="400" height="300">[No canvas support]</canvas>
+                    </td>
+                    <td>
+                        <canvas id="cvs3" width="400" height="300">[No canvas support]</canvas>
+                    </td>
+                    <td>
+                        <table>
+                            <tr>
+                                <canvas id="cvs4" width="550" height="190"  style="margin-top: -15px">[No canvas support]</canvas>
+                            </tr>
+                            <tr>
+                                <canvas id="cvs5" width="550" height="120" style="margin-top: -15px">[No canvas support]</canvas>
+                            </tr>
+                        </table>
+                    </td>
+                    </tr>
+                </table>
+            </div>
+            <div id="cpestana3" style="marging-left: 20px">
+                <table>
+                    <tr>
+                    
+                    <input style="margin-top: 0px; margin-left: 40px" type="checkbox" id="chkPorcentage" value="SI" checked>Consecución/Facturación
+                    </tr>
+                    <tr>
+                    <td>
+                        <canvas id="cvs6" width="400" height="300">[No canvas support]</canvas>
+                    </td>
+                    <td>
+                        <canvas id="cvs7" width="400" height="300">[No canvas support]</canvas>
+                    </td>
+                    <td>
+                        <table>
+                            <tr>
+                                <canvas id="cvs8" width="550" height="190"  style="margin-top: -15px">[No canvas support]</canvas>
+                            </tr>
+                            <tr>
+                                
+                                <canvas id="cvs9" width="550" height="120" style="margin-top: -15px">[No canvas support]</canvas>
+                                <input style="margin-top: 0px; margin-left: 80px" type="checkbox" id="chkSplit" value="SI" checked>Nº Proy/Revenue
+                                
+                            </tr>
+                        </table>
+                    </td>
+                    </tr>
+                </table>
+            </div>
+            <div id="cpestana4" style="marging-left: 20px">
+                <tr>
+                    <td>
+                        <canvas id="cvs_COM1" width="400" height="300">[No canvas support]</canvas>
+                    </td>
+                </tr>
+            </div>
+            <div id="cpestana5">
+                <table>
+                    <td width="400px">
+                <table style="font-size: 10px; marging-top: 15px; marging-left: 10px; border-collapse: collapse; table-layout:fixed; width:350px" border="1px" width="350px">
+                    <thead style="background-color: #3A89D3; color: white">
+                        <tr>
+                            <td style="border-bottom: 2px;"><b>FY16 Plan</b></td>
+                            <td style="border-bottom: 2px"><b>SPAIN</b></td>
+                            <td style="border-bottom: 2px;"><b>Enterprise</b></td>
+                            <td style="border-bottom: 2px;"><b>Public</b></td>
+                            <td style="border-bottom: 2px;"><b>Commercial</b></td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td style="background-color: lightgrey"><b>UCS PLUS</b></td><td id="target_UCS_SPAIN" align="right">17,963 K</td><td id="target_UCS_ENT" align="right">3,615 K</td><td id="target_UCS_PUB" align="right">6,070 K</td><td id="target_UCS_COM" align="right">8,440 K</td></tr>
+                        <tr><td style="background-color: lightgrey"><b>NX 9000</b></td><td id="target_N9K_SPAIN" align="right">2,900 K</td><td id="target_N9K_ENT" align="right">1,948 K</td><td id="target_N9K_PUB" align="right">100 K</td><td id="target_N9K_COM" align="right">960 K</td></tr>
+                        <tr><td style="background-color: lightgrey"><b>NX 2K-7K</b></td><td id="target_NEX_SPAIN" align="right">14,475 K</td><td id="target_NEX_ENT" align="right">5,978 K</td><td id="target_NEX_PUB" align="right">4,980 K</td><td id="target_NEX_COM" align="right">4,110 K</td></tr>
+                        <tr><td style="background-color: lightgrey"><b>SAN</b></td><td id="target_SAN_SPAIN" align="right">4,792 K</td><td id="target_SAN_ENT" align="right">3,882 K</td><td id="target_SAN_PUB" align="right">290 K</td><td id="target_SAN_COM" align="right">620 K</td></tr>
+                        
+                        
+                    </tbody>
+                    <tfoot style="border: 1px; background-color: lightgrey;">
+                        <td><b>TOTAL HW:</b></td><td style='border: 0px' align="right"><b>40.131 K</b></td><td style='border: 0px' align="right"><b>15.423 K</b></td><td style='border: 0px' align="right"><b>11.440 K</b></td><td style='border: 0px' align="right"><b>14.130 K</b></td>
+                        <tr><td style="background-color: lightgrey"><b>TOTAL SW:</b></td><td align="right" style='border: 0px'>700 K</td><td id="target_SAN_ENT" align="right" style='border: 0px'>250 K</td><td id="target_SAN_PUB" align="right" style='border: 0px'>250 K</td><td id="target_SAN_COM" align="right" style='border: 0px'>200 K</td></tr>
+                    </tfoot>
+                </table>
+                    <br>
+                    <table style="font-size: 10px; marging-top: 15px; marging-left: 10px; border-collapse: collapse; table-layout:fixed; width:350px" border="1px" width="350px">
+                        <thead style="background-color: #3A89D3; color: white">
+                            <td style="border-bottom: 2px"><b>Seasonality</b></td><td style="border-bottom: 2px" align="center"><b>Q1</b></td><td style="border-bottom: 2px" align="center"><b>Q2</b></td><td style="border-bottom: 2px" align="center"><b>Q3</b></td><td style="border-bottom: 2px" align="center"><b>Q4</b></td>
+                        </thead>
+                        <tbody>
+                        <tr><td  style="background-color: lightgrey" align="center"><b>(%)</b></td><td id="s_Q1" align="center">20,60%</td><td id="s_Q2" align="center">24,80%</td><td id="s_Q3" align="center">25,50%</td><td id="s_Q4" align="center">29,10%</td></tr>
+                        
+                    </tbody>
+                    </table>
+                    <table>
+                    <tr><td style="font-size: 10px">(*) Ponderación de trimestre: MES 1 (20%) / MES 2 (30%) / MES 3 (50%)</td></tr>
+                    </table>
+                </td>
+                <td width="500px">
+                    <p>Número de líneas visibles en la tabla:       <input  type="number"> </p>
+                    <p>Primer día de año fiscal:                    <input id='PrimerDia' name='date_toggled' type='text' value='' class='myInputDP' style='display: inline' />
+<img src='datepicker_vista/calendar.gif' class='myLinkDP' style='position: relative; top: 3px; margin-left: 4px;' /></p> 
+                    <p>Año fiscal:<select stile="align:right">
+                        <option value="FY10">FY10</option>
+                        <option value="FY11">FY11</option>
+                        <option value="FY12">FY12</option>
+                        <option value="FY13">FY13</option>
+                        <option value="FY14">FY14</option>
+                        <option value="FY15">FY15</option>
+                        <option value="FY16"  selected>FY16</option>
+                        <option value="FY17">FY17</option>
+                        <option value="FY18">FY18</option>
+                        <option value="FY19">FY19</option>
+                        <option value="FY20">FY20</option>
+                    </select></p> 
+                    <p>Escala de tiempo (Week/Month/Quarter/FY):     <select stile="align:right">
+                        <option value="w">Week</option>
+                        <option value="m">Month</option>
+                        <option value="q">Quarter</option>
+                        <option value="fy">FY</option>
+                    </select></p> 
+                    <p>Límite de escala horizontal en gráfica:       <input type="number"></p> 
+                    <p>Visualizar históricos de anteriores FY:       <input type="checkbox"></p>
+                    <p>Consolidar bookings por SO y Tecnología:      <input type="checkbox"></p> 
+                    
+                </td>
+                <td>
+                
+                <label style="font-size: 12px;">Output Format:
+                <select name="format">
+                    <option value="csv"> CSV</option>
+                    <option value="json" selected> JSON</option>
+                    <option value="form"> FORMULAE</option>
+                </select></label><br />
+                <p>Pulse para cargar fichero XLS: <input type="file" name="xlfile" id="xlf" /></p><br />
+                Advanced Demo Options: <br />
+                Use Web Workers: (when available) <input type="checkbox" name="useworker" checked><br />
+                Use Transferrables: (when available) <input type="checkbox" name="xferable" checked><br />
+                Use readAsBinaryString: (when available) <input type="checkbox" name="userabs" checked><br />
+                </td>
+                </table>
+            </div>
+        </div>
+    </body>
+</div>
+        
+
+<!--
+<pre id="out"></pre>
+<br />
+-->
+        
+<script>  
+var X = XLSX;
+var XW = {
+	/* worker message */
+	msg: 'xlsx',
+	/* worker scripts */
+	rABS: './xlsxworker2.js',
+	norABS: './xlsxworker1.js',
+	noxfer: './xlsxworker.js'
+};
+
+var rABS = typeof FileReader !== "undefined" && typeof FileReader.prototype !== "undefined" && typeof FileReader.prototype.readAsBinaryString !== "undefined";
+if(!rABS) {
+	document.getElementsByName("userabs")[0].disabled = true;
+	document.getElementsByName("userabs")[0].checked = false;
+}
+
+var use_worker = typeof Worker !== 'undefined';
+if(!use_worker) {
+	document.getElementsByName("useworker")[0].disabled = true;
+	document.getElementsByName("useworker")[0].checked = false;
+}
+
+var transferable = use_worker;
+if(!transferable) {
+	document.getElementsByName("xferable")[0].disabled = true;
+	document.getElementsByName("xferable")[0].checked = false;
+}
+
+var wtf_mode = false;
+
+function fixdata(data) {
+	var o = "", l = 0, w = 10240;
+	for(; l<data.byteLength/w; ++l) o+=String.fromCharCode.apply(null,new Uint8Array(data.slice(l*w,l*w+w)));
+	o+=String.fromCharCode.apply(null, new Uint8Array(data.slice(l*w)));
+	return o;
+}
+
+function ab2str(data) {
+	var o = "", l = 0, w = 10240;
+	for(; l<data.byteLength/w; ++l) o+=String.fromCharCode.apply(null,new Uint16Array(data.slice(l*w,l*w+w)));
+	o+=String.fromCharCode.apply(null, new Uint16Array(data.slice(l*w)));
+	return o;
+}
+
+function s2ab(s) {
+	var b = new ArrayBuffer(s.length*2), v = new Uint16Array(b);
+	for (var i=0; i != s.length; ++i) v[i] = s.charCodeAt(i);
+	return [v, b];
+}
+
+function xw_noxfer(data, cb) {
+	var worker = new Worker(XW.noxfer);
+	worker.onmessage = function(e) {
+		switch(e.data.t) {
+			case 'ready': break;
+			case 'e': console.error(e.data.d); break;
+			case XW.msg: cb(JSON.parse(e.data.d)); break;
+		}
+	};
+	var arr = rABS ? data : btoa(fixdata(data));
+	worker.postMessage({d:arr,b:rABS});
+}
+
+function xw_xfer(data, cb) {
+	var worker = new Worker(rABS ? XW.rABS : XW.norABS);
+	worker.onmessage = function(e) {
+		switch(e.data.t) {
+			case 'ready': break;
+			case 'e': console.error(e.data.d); break;
+			default: xx=ab2str(e.data).replace(/\n/g,"\\n").replace(/\r/g,"\\r"); console.log("done"); cb(JSON.parse(xx)); break;
+		}
+	};
+	if(rABS) {
+		var val = s2ab(data);
+		worker.postMessage(val[1], [val[1]]);
+	} else {
+		worker.postMessage(data, [data]);
+	}
+}
+
+function xw(data, cb) {
+	transferable = document.getElementsByName("xferable")[0].checked;
+	if(transferable) xw_xfer(data, cb);
+	else xw_noxfer(data, cb);
+}
+
+function get_radio_value( radioName ) {
+	var radios = document.getElementsByName( radioName );
+	for( var i = 0; i < radios.length; i++ ) {
+		if( radios[i].checked || radios.length === 1 ) {
+			return radios[i].value;
+		}
+	}
+}
+
+function to_json(workbook) {
+	var result = {};
+	workbook.SheetNames.forEach(function(sheetName) {
+		var roa = X.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+		if(roa.length > 0){
+			result[sheetName] = roa;
+		}
+	});
+	return result;
+}
+
+function to_csv(workbook) {
+	var result = [];
+	workbook.SheetNames.forEach(function(sheetName) {
+		var csv = X.utils.sheet_to_csv(workbook.Sheets[sheetName]);
+		if(csv.length > 0){
+			result.push("SHEET: " + sheetName);
+			result.push("");
+			result.push(csv);
+		}
+	});
+	return result.join("\n");
+}
+
+function to_formulae(workbook) {
+	var result = [];
+	workbook.SheetNames.forEach(function(sheetName) {
+		var formulae = X.utils.get_formulae(workbook.Sheets[sheetName]);
+		if(formulae.length > 0){
+			result.push("SHEET: " + sheetName);
+			result.push("");
+			result.push(formulae.join("\n"));
+		}
+	});
+	return result.join("\n");
+}
+
+var tarea = document.getElementById('b64data');
+function b64it() {
+	if(typeof console !== 'undefined') console.log("onload", new Date());
+	var wb = X.read(tarea.value, {type: 'base64',WTF:wtf_mode});
+	process_wb(wb);
+}
+
+function process_wb(wb) {
+	var output = "";
+	switch(get_radio_value("format")) {
+		case "json":
+			output = JSON.stringify(to_json(wb), 2, 2);
+			break;
+		case "form":
+			output = to_formulae(wb);
+			break;
+		default:
+		output = to_csv(wb);
+	}
+	/*if(out.innerText === undefined) out.textContent = output;
+	else out.innerText = output;
+	if(typeof console !== 'undefined') console.log("output", new Date());*/
+    tablaPrincipal = to_json(wb); 
+    RellenaTabla(tablaPrincipal.Sheet1);
+    
+    //filter(miFiltro,'miTabla');
+    //CalculaFecha(tabla.Sheet2);
+}
+
+var drop = document.getElementById('drop');
+function handleDrop(e) {
+	e.stopPropagation();
+	e.preventDefault();
+	rABS = document.getElementsByName("userabs")[0].checked;
+	use_worker = document.getElementsByName("useworker")[0].checked;
+	var files = e.dataTransfer.files;
+	var f = files[0];
+	{
+		var reader = new FileReader();
+		var name = f.name;
+		reader.onload = function(e) {
+			if(typeof console !== 'undefined') console.log("onload", new Date(), rABS, use_worker);
+			var data = e.target.result;
+			if(use_worker) {
+				xw(data, process_wb);
+			} else {
+				var wb;
+				if(rABS) {
+					wb = X.read(data, {type: 'binary'});
+				} else {
+				var arr = fixdata(data);
+					wb = X.read(btoa(arr), {type: 'base64'});
+				}
+				process_wb(wb);
+			}
+		};
+		if(rABS) reader.readAsBinaryString(f);
+		else reader.readAsArrayBuffer(f);
+	}
+    
+}
+
+function handleDragover(e) {
+	e.stopPropagation();
+	e.preventDefault();
+	e.dataTransfer.dropEffect = 'copy';
+}
+
+if(drop.addEventListener) {
+	drop.addEventListener('dragenter', handleDragover, false);
+	drop.addEventListener('dragover', handleDragover, false);
+	drop.addEventListener('drop', handleDrop, false);
+}
+
+
+var xlf = document.getElementById('xlf');
+function handleFile(e) {
+	rABS = document.getElementsByName("userabs")[0].checked;
+	use_worker = document.getElementsByName("useworker")[0].checked;
+	var files = e.target.files;
+	var f = files[0];
+	{
+		var reader = new FileReader();
+		var name = f.name;
+		reader.onload = function(e) {
+			if(typeof console !== 'undefined') console.log("onload", new Date(), rABS, use_worker);
+			var data = e.target.result;
+			if(use_worker) {
+				xw(data, process_wb);
+			} else {
+				var wb;
+				if(rABS) {
+					wb = X.read(data, {type: 'binary'});
+				} else {
+				var arr = fixdata(data);
+					wb = X.read(btoa(arr), {type: 'base64'});
+				}
+				process_wb(wb);
+			}
+		};
+		if(rABS) reader.readAsBinaryString(f);
+		else reader.readAsArrayBuffer(f);
+	}
+    cambiarPestanna(pestanas,pestana1);
+}
+
+if(xlf.addEventListener) xlf.addEventListener('change', handleFile, false);
+    
+
+function RellenaTabla(arr) {
+    var i;
+    bookings = 0.0;
+    commit = 0.0;
+    upside = 0.0;
+    nf = 0.0;
+    
+    var out = "<table id='miTabla' class='display' style='font-size: 10px; marging-top: 5px; marging-left: 10px; border-collapse: collapse;table-layout:fixed; width:1200px' border='1px' width='1200px'><colgroup><col class='xl202' style='width:45pt' width='45'><col class='xl202' style='width:120pt' width='120'><col class='xl202' style='width:100pt' width='100'><col class='xl210' style='width:50pt' width='50'><col class='xl202' style='width:120pt' width='120'><col class='xl202' style='width:120pt' width='120'><col class='xl202' style='width:120pt' width='120'><col class='xl202' style='width:40pt' width='40'><col class='xl202' style='width:40pt' width='40'><col class='xl202' style='width:40pt' width='40'><col class='xl202' style='width:50pt' width='50'><col class='xl202' style='width:70pt' width='70'></colgroup>";
+    out += "<thead style='background-color: #3A89D3; color: white'><tr style='height:10.0pt' height='12'><td class='xl199'><b>Deal ID</b></td><td class='xl199'><b>Proyecto</b></td><td class='xl199'><b>Tecnología</b></td><td class='xl199'><b>Importe</b></td><td class='xl199'><b>Cliente</b></td><td class='xl199'><b>Partner</b></td><td class='xl199'><b>AM</b></td><td class='xl199'><b>SCMS</b></td><td class='xl199'><b>Estado</b></td><td class='xl199'><b>Distri</b></td><td class='xl199'><b>Stage</b></td><td class='xl199'><b>Fecha</b></td></tr></thead><tbody>";
+    for(i = 0; i < arr.length; i++) {
+        out += "<tr style='height: 1em; overflow: hidden'><td>" + 
+        arr[i]["Deal ID"] +
+        "</td><td style='max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap'>" +
+        arr[i].Proyecto +
+        "</td><td style='max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap'>" +
+        arr[i].Tecnología +
+        "</td><td align='right' style='max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap'>" +
+        formatCurrency(arr[i].Importe) +
+        "</td><td style='max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap'>" +
+        arr[i]["Cliente"] +
+        "</td><td style='max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap'>" +
+        arr[i].Partner +
+        "</td><td style='max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap'>" +
+        arr[i].AM +
+        "</td><td style='max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap'>" +
+        arr[i].SCMS +
+        "</td><td style='max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap'>" +
+        arr[i].Estado +
+        "</td><td style='max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap'>" +
+        arr[i].Distri +
+        "</td><td style='max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap'>" +
+        arr[i].Stage +
+        "</td><td style='max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap'>" +
+        arr[i].Fecha +
+        "</td></tr>";
+        if (arr[i].Estado == "Booked")
+             bookings += parseInt(arr[i].Importe);
+        else if (arr[i].Estado == "Commit")
+             commit += parseInt(arr[i].Importe);
+        else if (arr[i].Estado == "Upside")
+             upside += parseInt(arr[i].Importe);
+        else if (arr[i].Estado == "NF")
+             nf += parseInt(arr[i].Importe);
+    }
+    out +="</tbody>";
+    out += "<tfoot style='border-top: 2px solid black'><tr><td id='nLineas' colspan='2' style='border: 0px'></td><td style='border: 0px' align='right'>Total = </td><td id='totalCol' align='right' style='border: 0px'>0</td><td style='border: 0px'></td><td style='border: 0px'></td><td style='border: 0px'></td><td style='border: 0px'></td><td style='border: 0px'></td><td style='border: 0px'></td><td style='border: 0px'></td><td style='border: 0px'></td></tr></tfoot>"; 
+    document.getElementById("lbl_bookings").innerHTML = formatCurrency(bookings+iaas);
+    document.getElementById("lbl_commit").innerHTML = formatCurrency(commit);
+    document.getElementById("lbl_upside").innerHTML = formatCurrency(upside);
+    document.getElementById("lbl_nf").innerHTML = formatCurrency(nf);
+    
+    out += "</table>";
+    
+    document.getElementById("cpestana1").innerHTML = out;
+    
+    $('#miTabla tbody tr td').each( function() {
+        this.setAttribute( 'title', $(this).text());
+    });
+    
+    oTable = new $('#miTabla').DataTable({
+        "dom": 'T<"clear">lrtip',
+        "paging": false,
+        "autoWidth": false
+        }); 
+    
+    
+    
+    filterAll();
+}
+    
+function filterAll(){
+    var filtroFecha = $('#FechaSelect').val();
+    //alert(1000 * parseInt($('#elUmbral')[0].value));
+    filterByUmbral(3, 1000 * parseInt($('#elUmbral')[0].value));
+    filterByDate(11, filtroFecha); // We call our filter function
+    filterBySCMS(7, "COM");
+    filterByTech();
+    filterByStatus();
+    filterByStage();
+    
+    oTable.draw(); // Manually redraw the table after filtering
+    Refresh_ALLGraphs();
+    //desglosa("miTabla");
+    //CalculaTarget();
+    //Refresh_Graph();
+    //Refresh_Graph2();
+}
+    
+function formatCurrency(num) {
+    num = num.toString().replace(/\$|\,/g,'');
+    if(isNaN(num))
+    num = "0";
+    sign = (num == (num = Math.abs(num)));
+    num = Math.floor(num*100+0.50000000001);
+    cents = num%100;
+    num = Math.floor(num/100).toString();
+    if(cents<10)
+    cents = "0" + cents;
+    for (var i = 0; i < Math.floor((num.length-(1+i))/3); i++)
+    num = num.substring(0,num.length-(4*i+3))+','+
+    num.substring(num.length-(4*i+3));
+    return (((sign)?'':'-')  + num + ' $');
+}
+// Dadas la division que contiene todas las pestañas y la de la pestaña que se 
+// quiere mostrar, la funcion oculta todas las pestañas a excepcion de esa.
+function cambiarPestanna(pestannas,pestanna) {
+    
+    // Obtiene los elementos con los identificadores pasados.
+    pestanna = document.getElementById(pestanna.id);
+    listaPestannas = document.getElementById(pestannas.id);
+    
+    // Obtiene las divisiones que tienen el contenido de las pestañas.
+    cpestanna = document.getElementById('c'+pestanna.id);
+    listacPestannas = document.getElementById('contenido'+pestannas.id);
+    
+    i=0;
+    // Recorre la lista ocultando todas las pestañas y restaurando el fondo 
+    // y el padding de las pestañas.
+    while (typeof listacPestannas.getElementsByTagName('div')[i] != 'undefined'){
+        $(document).ready(function(){
+            $(listacPestannas.getElementsByTagName('div')[i]).css('display','none');
+            $(listaPestannas.getElementsByTagName('li')[i]).css('background','lightgrey');
+            $(listaPestannas.getElementsByTagName('li')[i]).css('color','white');
+            $(listaPestannas.getElementsByTagName('li')[i]).css('padding-bottom','0px');
+            
+        });
+        
+        i += 1;
+    }
+    
+    if(pestanna.id=="pestana1" && oTable != undefined){
+        $("#miTabla_wrapper").css('display','inline-block');
+        //RellenaTabla(tablaPrincipal.Sheet1);
+        //oTable.draw();
+    }
+    if(pestanna.id=="pestana2"){
+        
+        $("#rgraphAttributionContainer_cvs2").css('display','inline-block');
+        $("#rgraphAttributionContainer_cvs3").css('display','inline-block');
+        $("#rgraphAttributionContainer_cvs4").css('display','inline-block');
+        $("#rgraphAttributionContainer_cvs5").css('display','inline-block');
+        //Refresh_Graph2();
+    }
+    if(pestanna.id=="pestana3"){
+        
+        $("#rgraphAttributionContainer_cvs6").css('display','inline-block');
+        $("#rgraphAttributionContainer_cvs7").css('display','inline-block');
+        $("#rgraphAttributionContainer_cvs8").css('display','inline-block');
+        $("#rgraphAttributionContainer_cvs9").css('display','inline-block');
+        //Refresh_Graph2();
+    }
+    if(pestanna.id=="pestana4"){
+        
+        $("#rgraphAttributionContainer_csv_COM1").css('display','inline-block');
+        
+        //Refresh_Graph2();
+    }
+    $(document).ready(function(){
+        // Muestra el contenido de la pestaña pasada como parametro a la funcion,
+        // cambia el color de la pestaña y aumenta el padding para que tape el  
+        // borde superior del contenido que esta juesto debajo y se vea de este 
+        // modo que esta seleccionada.
+        
+        $(cpestanna).css('display','');
+        $(pestanna).css('background','white');
+        $(pestanna).css('padding-bottom','1px'); 
+        
+    });
+    
+}
+
+$('.statusFilter').click(function(){
+			
+    filterAll();
+
+});		  
+    
+$('.stageFilter').click(function(){
+			
+    filterAll();
+
+});	
+
+$('#BuscaBOX').keyup(function(){
+    oTable.search($(this).val()).draw() ;
+    Refresh_ALLGraphs();
+})
+     
+$('#FechaSelect').bind('change keyup', function(e){
+    
+    e.preventDefault();
+    filterAll();
+  }); 
+    
+$('#chkIAAS').on('change', function(e){
+    Refresh_ALLGraphs();
+  }); 
+    
+$('#chkSplit').on('change', function(e){
+    Refresh_ALLGraphs();
+  }); 
+    
+ $('#chkPorcentage').on('change', function(e){
+    Refresh_ALLGraphs();
+  }); 
+    
+$('#chkPeriodo').on('change', function(e){
+    Refresh_ALLGraphs();
+  }); 
+    
+$('#elUmbral').on('change keyup', function(e){
+    filterAll();
+  }); 
+    
+$('#btn_Week, #btn_Month, #btn_Q, #btn_FY, #btn_Spain, #btn_E, #btn_P, #btn_C, #btn_Tech, #btn_UCS, #btn_N9K, #btn_NEX, #btn_MDS').on('click', function(e){
+    e.preventDefault();
+        filterAll();    
+  });  
+    
+
+    
+// Event listener to the two range filtering inputs to redraw on input
+var filterByDate = function(column, filtroFecha) {
+  // Custom filter syntax requires pushing the new filter to the global filter array
+		$.fn.dataTable.ext.search.length = 0;
+        
+        $.fn.dataTable.ext.search.push(
+		   	function( settings, data, dataIndex ) {
+		   		var rowDate = data[column];
+          
+          // If our date from the row is between the start and end
+        //alert(rowDate + "   " + filtroFecha); 
+        if (rowDate.indexOf(filtroFecha)>=0) {
+            return true;
+          } else {
+            return false;
+          }
+        }
+		);
+	};
+var filterBySCMS = function(column, filtroSCMS) {
+  // Custom filter syntax requires pushing the new filter to the global filter array
+		
+        
+        $.fn.dataTable.ext.search.push(
+		   	function( settings, data, dataIndex ) {
+		   		var rowDate = data[column];
+                var E =  document.getElementById("btn_E").classList.contains('activeSCMS');
+                var C =  document.getElementById("btn_C").classList.contains('activeSCMS');
+                var P =  document.getElementById("btn_P").classList.contains('activeSCMS');
+                //var comp_SCMS = data[7].toString(); // use data for the SCSM column
+                // If our date from the row is between the start and end
+                //alert(rowDate + "   " + filtroFecha); 
+                if (E){
+            if(P){
+                if(C){ // E P C
+                    return true;
+                } else { // E P
+                    if (rowDate.indexOf("PS")>=0 || rowDate.indexOf("ENT")>=0){
+                        return true;
+                    } else{
+                        return false;
+                    }
+                }
+            } else {
+                if(C){ // E C
+                    if (rowDate.indexOf("ENT")>=0 || rowDate.indexOf("COM")>=0){
+                        return true;
+                    } else{
+                        return false;
+                    }
+                } else { // E
+                    if (rowDate.indexOf("ENT")>=0){
+                        return true;
+                    } else{
+                        return false;
+                    }
+                }
+            }
+            
+        } else {
+            if(P){ 
+                if(C){ // P C
+                    if (rowDate.indexOf("PS")>=0 || rowDate.indexOf("COM")>=0){
+                        return true;
+                    } else{
+                        return false;
+                    }
+                } else { // P
+                    if (rowDate.indexOf("PS")>=0){
+                        return true;
+                    } else{
+                        return false;
+                    }
+                }
+            } else {
+                if(C){ // C
+                    if (rowDate.indexOf("COM")>=0){
+                        return true;
+                    } else{
+                        return false;
+                    }
+                } else { // E
+                    return false;
+                    }
+                }
+            }
+            
+        
+        return false;
+    }
+		);
+	};       
+var filterByStatus = function() {
+   $.fn.dataTable.ext.search.push(
+        function( settings, data, dataIndex ) {
+            var categoryFilter,categoryCol,categoryArray,found;
+            
+            //creates selected checkbox array
+        categoryFilter = $('.statusFilter:checked').map(function () {
+              return this.value;
+            }).get();
+         //alert(categoryFilter);
+        if(categoryFilter.length){
+             
+            categoryCol = data[8]; //filter column 'Status'
+             
+            categoryArray =  $.map( categoryCol.split(','), $.trim); // splites comma seprated string into array
+             
+            // finding array intersection
+            found = $(categoryArray).not($(categoryArray).not(categoryFilter)).length;
+             
+            if(found == 0){
+                return false;
+            }
+            else{
+                return true;
+            }       
+        }
+                     
+        // default no filter
+        return true;
+         
+    }
+);
+	};          
+var filterByStage = function() {
+   $.fn.dataTable.ext.search.push(
+        function( settings, data, dataIndex ) {
+            var categoryFilter,categoryCol,categoryArray,found;
+            
+            //creates selected checkbox array
+        categoryFilter = $('.stageFilter:checked').map(function () {
+              return this.value;
+            }).get();
+         //alert(categoryFilter);
+        if(categoryFilter.length){
+             
+            categoryCol = data[10]; //filter column 'Stage'
+             
+            categoryArray =  $.map( categoryCol.split(','), $.trim); // splites comma seprated string into array
+             
+            // finding array intersection
+            found = $(categoryArray).not($(categoryArray).not(categoryFilter)).length;
+             
+            if(found == 0){
+                return false;
+            }
+            else{
+                return true;
+            }       
+        }
+                     
+        // default no filter
+        return true;
+         
+    }
+);
+	};         
+var filterByTech = function() {
+   $.fn.dataTable.ext.search.push(
+        function( settings, data, dataIndex ) {
+            var categoryFilter,categoryCol,categoryArray,found;
+            
+            //creates selected checkbox array
+        categoryFilter = $('.activeTech').map(function () {
+              return this.value;
+            }).get();
+         //alert(categoryFilter);
+        if(categoryFilter.length){
+             
+            categoryCol = data[2]; //filter column 'Tecnología'
+             
+            categoryArray =  $.map( categoryCol.split(','), $.trim); // splites comma seprated string into array
+             
+            // finding array intersection
+            found = $(categoryArray).not($(categoryArray).not(categoryFilter)).length;
+             
+            if(found == 0){
+                return false;
+            }
+            else{
+                return true;
+            }       
+        }
+                     
+        // default no filter
+        return true;
+         
+    }
+);
+	};
+var filterByUmbral = function(column, miUmbral) {
+  // Custom filter syntax requires pushing the new filter to the global filter array
+		return true;
+        $.fn.dataTable.ext.search.length = 0;
+        
+        $.fn.dataTable.ext.search.push(
+		   	function( settings, data, dataIndex ) {
+		   		var rowDate = data[column];
+          
+               
+        if (true) {
+            return true;
+          } else {
+            return false; 
+          }
+        }
+		);
+	};
+/* Custom filtering function which will search data in column four between two values */
+
+</script>
+<script type="text/javascript">
+	var _gaq = _gaq || [];
+	_gaq.push(['_setAccount', 'UA-36810333-1']);
+	_gaq.push(['_trackPageview']);
+
+	(function() {
+		var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	})();  
+</script>
+</body>
+</html>
