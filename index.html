@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <link rel="stylesheet" href="main.css">
+    <!--
+        <link rel="stylesheet" href="DatePicker.scss">
+    -->
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+
+    <!-- DataTables CSS -->
+        <link rel="stylesheet" type="text/css" href="DataTables-1.10.7/media/css/jquery.dataTables.css">  
+    <!-- jQuery -->
+        <script type="text/javascript" charset="utf8" src="DataTables-1.10.7/media/js/jquery.js"></script>
+    <!-- DataTables -->
+        <script type="text/javascript" charset="utf8" src="DataTables-1.10.7/media/js/jquery.dataTables.js"></script>
+
+    <style type="text/css">
+        .main {
+            word-wrap: break-word;
+            word-break:break-all;
+        }
+    </style>
+
+    <style>
+        #drop{
+            border:2px dashed #bbb;
+            width: 380px;
+            height: 100%;
+            border-radius:4px;
+            margin-left: 12px;
+            margin-bottom: 12px;
+            text-align: center;
+            vertical-align: center;
+            font:16pt bold,"Vollkorn";color:#bbb
+        }
+        #b64data{
+            width:100%;
+        }
+    </style>
+    
+    <script src="mootools-datepicker/Test/mootools-core.js" type="text/javascript"></script>
+	<script src="mootools-datepicker/Test/mootools-more.js" type="text/javascript"></script>
+	<script src="mootools-datepicker/Source/Locale.es-ES-DatePicker.js" type="text/javascript"></script>
+	<script src="mootools-datepicker/Source/Picker.js" type="text/javascript"></script>
+	<script src="mootools-datepicker/Source/Picker.Attach.js" type="text/javascript"></script>
+	<script src="mootools-datepicker/Source/Picker.Date.js" type="text/javascript"></script>
+
+    <link href="mootools-datepicker/Source/datepicker_vista/datepicker_vista.css" rel="stylesheet">
+    <link href="mootools-datepicker/Source/datepicker_dashboard/datepicker_dashboard.css" rel="stylesheet">
+     
+   
+    <!-- SOPORTE PARA GRÁFICAS CON LIBRERÍA RGRAPH -->
+
+    <script src="RGraph/libraries/RGraph.common.core.js" ></script>
+    <script src="RGraph/libraries/RGraph.common.dynamic.js" ></script>
+    <script src="RGraph/libraries/RGraph.common.tooltips.js" ></script>
+    <script src="RGraph/libraries/RGraph.common.key.js" ></script>
+    <script src="RGraph/libraries/RGraph.hbar.js" ></script>
+    <script src="RGraph/libraries/RGraph.bar.js" ></script>
+    <script src="RGraph/libraries/RGraph.pie.js"></script>
+    <script src="RGraph/libraries/RGraph.bipolar.js"></script>
+    <script src="RGraph/libraries/RGraph.drawing.rect.js"></script>
+    
+    <!-- SOPORTE PARA IMPORTACIÓN DE FICHEROS EXCEL -->
+
+    <script lang="javascript" src="dist/xlsx.core.min.js"></script>
+
+    <!-- uncomment the next line here and in xlsxworker.js for encoding support -->
+    <!--<script src="dist/cpexcel.js"></script>-->
+    
+    <script src="shim.js"></script>
+    <script src="jszip.js"></script>
+    <script src="xlsx.js"></script>
+    
+    <!-- uncomment the next line here and in xlsxworker.js for ODS support -->
+    <script src="ods.js"></script>  
+
+
+    <title>Cisco Report 2015</title>
+    
+
+</head>
+<body>
+        <!-- Cabecera y espacio de carga de ficheros XLS (DROP) -->
+        <table style="margin-top: 0px">
+        <tr>
+            <td style="width=900px; padding: 0 0px 0 0px;"><img style="margin-top: 4px" src="Cisco_cabecera_short.png"></td>
+            <td id="drop" style="margin-top: 20px; padding: 16px 0px 16px 0px;">(DROP) Cargar fichero de datos<br>XLSX/XLSM/XLSB/ODS/XLS/XML</td> 
+        </tr>
+        </table>
+        <!-- Contenedor Filtro y Gráfica principal -->
+        <form>
+            <div class="contenedor" style="margin-top: 0px">
+            
+                
+                <table style="margin-top: 0px; margin-botton: -10px">
+                    <tr>
+                    <td style="width; 120px">
+                        <label style="margin-left: -6px">Umbral=</label>
+                        <input type="number" id="elUmbral" style="margin-left: 1px; width: 40px" value=100 />
+                        <label style="margin-left: 1px">K</label>
+                        <br>
+                        <select style="width: 110px">
+                            <option value="All">All Partners</option>
+                            
+                        </select>
+                    </td>
+                    <td></td>
+                    <td style="width; 85px">
+                        <button style="margin-left: -1px; width: 60px" type="button" id="btn_Spain" onclick="setColorSCMS(event)">Spain</button>
+                        <button style="margin-left: -1px; width: 15px" type="button" id="btn_E" onclick="setColorSCMS(event)">E</button>
+                        <button style="width: 15px" type="button" id="btn_P" onclick="setColorSCMS(event)">P</button>
+                        <button style="width: 15px" type="button" id="btn_C" onclick="setColorSCMS(event)">C</button>            
+                    </td>
+                    <td style="width; 185px" colspan="3">
+                        <button style="width: 150px" type="button" value="DC" id="btn_Tech" onclick="setColorTech(event)">All Tech</button>
+                        <button style="width: 30px" type="button" value="UCS" id="btn_UCS" onclick="setColorTech(event)">P1</button>
+                        <button style="width: 30px" type="button" value="N9K" id="btn_N9K" onclick="setColorTech(event)">P2</button>
+                        <button style="width: 30px" type="button" value="Nexus" id="btn_NEX" onclick="setColorTech(event)">P3</button>
+                        <button style="width: 30px" type="button" value="MDS" id="btn_MDS" onclick="setColorTech(event)">P4</button>
+                    </td>
+                    <td></td>
+                      <td style="width: 284px; padding: 0 0 0 0">
+                        <button type="button" style="margin-left: 50px" id="btn_Week" onclick="setColorFecha(event)">Week</button>
+                        <button type="button" id="btn_Month" onclick="setColorFecha(event)">Month</button>
+                        <button type="button" id="btn_Q" onclick="setColorFecha(event)">Quarter</button>
+                        <button type="button" id="btn_FY" onclick="setColorFecha(event)">FY</button><br><br>
+                    </td>
+                    <td style="width:10px; padding: 0 0 0 0">
+                        
+                    </td>
+                    <td>
+                    <select id="FechaSelect" style="margin-left: -1px; width: 120px">
+                        <option value="FY15">FY15-Q3-M3-W2</option>
+                        <option value="FY14">FY15-Q3-M3</option>
+                        <option value="FY13">FY15-Q3</option>
+                        <option value="FY12">FY15</option>
+                    </select>
+                    <input id="BuscaBOX" style="margin-left: 20px" type="search" class="LOLOlight-table-filter" data-table="display" placeholder="Buscar..." />
+                    <label style="margin-right: 20px">Week: <b id="fechaActual" >FY15-Q3-M3-W2</b></label>
+                    
+                        <input id='boton_menos' style="margin-left: 20px" type="button" VALUE='<' class="btn btn-xs btn-info" onclick="myButtonMENOS_onclick()" >
+                        <input id='boton_mas' type="button" value=">" class="btn btn-xs btn-info" onclick="myButtonMAS_onclick()" >
+                        <br><br>
+                    </td>
+                    </tr>
+                    <tr>
+                    <td>
+                        <form action="demo_form.asp" method="get">
+                            <input class="stageFilter" type="checkbox" name="SCMS" value="1 - Prospect" checked> 1.- Prospect<br>
+                            <input class="stageFilter" type="checkbox" name="SCMS" value="2 - Qualification" checked> 2.- Qualification<br>
+                            <input class="stageFilter" type="checkbox" name="SCMS" value="3 - Proposal" checked> 3.- Proposal<br>
+                            <input class="stageFilter" type="checkbox" name="SCMS" value="4 - Agreement" checked> 4.- Agreement<br>
+                            <input class="stageFilter" type="checkbox" name="SCMS" value="5 - Closing" checked> 5.- Closing<br>
+                            <input class="stageFilter" type="checkbox" name="SCMS" value="6 - Booked" checked> 6.- Booked<br>
+                        </form>
+                    </td>
+                    <td></td>
+                    <td>
+                        <fieldset style="width: 4px; border:1px solid #666; margin-left: 28px; margin-top: 3px; background-color: #008800"></fieldset>
+                        <fieldset style="width: 4px; border:1px solid #666; margin-left: 28px; margin-top: 9px; margin-bottom: 10px; background-color: #50cc50 "></fieldset>
+                        <fieldset style="width: 4px; border:1px solid #666; margin-left: 28px; margin-top: 9px; margin-bottom: 10px; background-color: #eeee55 "></fieldset>
+                        <fieldset style="width: 4px; border:1px solid #666; margin-left: 28px; margin-top: 9px; background-color: #9b0000 "></fieldset>
+                    </td>
+                    <td>
+                        
+                        <form style="margin-top: 3px;" action="demo_form.asp" method="get">
+                            <input class="statusFilter" style="margin-top: 0px; margin-left: -8px" type="checkbox" name="chkB" value="Booked" checked> Booked<br>
+                            <input class="statusFilter" style="margin-top: 6px; margin-left: -8px" type="checkbox" name="chkC" value="Commit" checked> Commit<br>
+                            <input class="statusFilter" style="margin-top: 6px; margin-left: -8px" type="checkbox" name="chkU" value="Upside" checked> Upside<br>
+                            <input class="statusFilter" style="margin-top: 6px; margin-left: -8px" type="checkbox" name="chkNF" value="NF" checked> Non For.<br>
+                        </form>
+                        
+                    </td>
+                    
+                    <td colspan="2"> 
+                        <b><label id="lbl_target" style="margin-top: -4px; margin-left: -190px;  
+                                      display:block; width:100; height:30; text-align:right">Target: 0 $</label></b>
+                        <label id="lbl_bookings" style="margin-top: 1px; display:block; width:100; height:30; text-align:right"> bookings</label>
+                        <label id="lbl_commit" style="margin-top: 0px;display:block; width:100; height:30; text-align:right"> commit</label>
+                        <label id="lbl_upside" style="margin-top: 0px;display:block; width:100; height:30; text-align:right"> upside</label>
+                        <label id="lbl_nf" style="margin-top: 0px;display:block; width:100; height:30; text-align:right"> nf</label><br>
+                        
+                    </td>
+                    
+                    <td colspan="4">
+                            <canvas id="cvs" width="952" height="140">[No canvas support]</canvas>
+                            <label id="Filtros" class="titulo" style="margin-left: 100px"></label><input style="margin-bottom: -20px; margin-left: 500px" type="checkbox" id="chkIAAS" value="SI" checked>Mostrar IaaS
+                    </td><td></td><td></td><td></td>
+                    </tr>
+                </table>
+                </div>
+              </form>
+        <p></p>
+<div class="contenedor">
+        <div class="titulo"></div>
+        <div id="pestanas">
+            <ul id=lista>
+                <li id="pestana1"><a href='javascript:cambiarPestanna(pestanas,pestana1);'>Datos</a></li>
+                <li id="pestana2"><a href='javascript:cambiarPestanna(pestanas,pestana2);'>Cuadro de Mando</a></li>
+                <li id="pestana3"><a href='javascript:cambiarPestanna(pestanas,pestana3);'>Cuadro de Mando Canal</a></li>
+                <li id="pestana4"><a href='javascript:cambiarPestanna(pestanas,pestana4);'>Cuadro de Mando Commercial</a></li>
+                <li id="pestana5"><a href='javascript:cambiarPestanna(pestanas,pestana5);'>Configuración y Targets</a></li>
+            </ul>
+        </div>
+    <body onload="javascript:cambiarPestanna(pestanas,pestana1);">
+ 
+        <div id="contenidopestanas">
+            <div id="cpestana1">
+               
+            </div>
+            <div id="cpestana2" style="marging-left: 20px">
+                <table>
+                    <tr>
+                    <button style="margin-left: -1px; width: 60px" type="button" id="btn_Files" onclick="DescargaFicheros()">FILES</button>
+                    <input style="margin-top: 0px; margin-left: 80px" type="checkbox" id="chkPeriodo" value="SI" checked>Mensual/Trimestral
+                    <input style="margin-top: 0px; margin-left: 40px" type="checkbox" id="chkPorcentage" value="SI" checked>Consecución/Facturación
+                    </tr>
+                    <tr>
+                    <td>
+                        <canvas id="cvs2" width="400" height="300">[No canvas support]</canvas>
+                    </td>
+                    <td>
+                        <canvas id="cvs3" width="400" height="300">[No canvas support]</canvas>
+                    </td>
+                    <td>
+                        <table>
+                            <tr>
+                                <canvas id="cvs4" width="550" height="190"  style="margin-top: -15px">[No canvas support]</canvas>
+                            </tr>
+                            <tr>
+                                <canvas id="cvs5" width="550" height="120" style="margin-top: -15px">[No canvas support]</canvas>
+                            </tr>
+                        </table>
+                    </td>
+                    </tr>
+                </table>
+            </div>
+            <div id="cpestana3" style="marging-left: 20px">
+                <table>
+                    <tr>
+                    
+                    <input style="margin-top: 0px; margin-left: 40px" type="checkbox" id="chkPorcentage" value="SI" checked>Consecución/Facturación
+                    </tr>
+                    <tr>
+                    <td>
+                        <canvas id="cvs6" width="400" height="300">[No canvas support]</canvas>
+                    </td>
+                    <td>
+                        <canvas id="cvs7" width="400" height="300">[No canvas support]</canvas>
+                    </td>
+                    <td>
+                        <table>
+                            <tr>
+                                <canvas id="cvs8" width="550" height="190"  style="margin-top: -15px">[No canvas support]</canvas>
+                            </tr>
+                            <tr>
+                                
+                                <canvas id="cvs9" width="550" height="120" style="margin-top: -15px">[No canvas support]</canvas>
+                                <input style="margin-top: 0px; margin-left: 80px" type="checkbox" id="chkSplit" value="SI" checked>Nº Proy/Revenue
+                                
+                            </tr>
+                        </table>
+                    </td>
+                    </tr>
+                </table>
+            </div>
+            <div id="cpestana4" style="marging-left: 20px">
+                <tr>
+                    <td>
+                        <canvas id="cvs_COM1" width="400" height="300">[No canvas support]</canvas>
+                    </td>
+                </tr>
+            </div>
+            <div id="cpestana5">
+                <table>
+                    <td width="400px">
+                <table style="font-size: 10px; marging-top: 15px; marging-left: 10px; border-collapse: collapse; table-layout:fixed; width:350px" border="1px" width="350px">
+                    
+                    
+                    
+                </table>
+                    <br>
+                    <table style="font-size: 10px; marging-top: 15px; marging-left: 10px; border-collapse: collapse; table-layout:fixed; width:350px" border="1px" width="350px">
+                        <thead style="background-color: #3A89D3; color: white">
+                            <td style="border-bottom: 2px"><b>Seasonality</b></td><td style="border-bottom: 2px" align="center"><b>Q1</b></td><td style="border-bottom: 2px" align="center"><b>Q2</b></td><td style="border-bottom: 2px" align="center"><b>Q3</b></td><td style="border-bottom: 2px" align="center"><b>Q4</b></td>
+                        </thead>
+                        <tbody>
+                        <tr><td  style="background-color: lightgrey" align="center"><b>(%)</b></td><td id="s_Q1" align="center">20,60%</td><td id="s_Q2" align="center">24,80%</td><td id="s_Q3" align="center">25,50%</td><td id="s_Q4" align="center">29,10%</td></tr>
+                        
+                    </tbody>
+                    </table>
+                    <table>
+                    <tr><td style="font-size: 10px">(*) Ponderación de trimestre: MES 1 (20%) / MES 2 (30%) / MES 3 (50%)</td></tr>
+                    </table>
+                </td>
+                <td width="500px">
+                    <p>Número de líneas visibles en la tabla:       <input  type="number"> </p>
+                    <p>Primer día de año fiscal:                    <input id='PrimerDia' name='date_toggled' type='text' value='' class='myInputDP' style='display: inline' />
+<img src='datepicker_vista/calendar.gif' class='myLinkDP' style='position: relative; top: 3px; margin-left: 4px;' /></p> 
+                    <p>Año fiscal:<select stile="align:right">
+                        <option value="FY10">FY10</option>
+                        <option value="FY11">FY11</option>
+                        <option value="FY12">FY12</option>
+                        <option value="FY13">FY13</option>
+                        <option value="FY14">FY14</option>
+                        <option value="FY15">FY15</option>
+                        <option value="FY16"  selected>FY16</option>
+                        <option value="FY17">FY17</option>
+                        <option value="FY18">FY18</option>
+                        <option value="FY19">FY19</option>
+                        <option value="FY20">FY20</option>
+                    </select></p> 
+                    <p>Escala de tiempo (Week/Month/Quarter/FY):     <select stile="align:right">
+                        <option value="w">Week</option>
+                        <option value="m">Month</option>
+                        <option value="q">Quarter</option>
+                        <option value="fy">FY</option>
+                    </select></p> 
+                    <p>Límite de escala horizontal en gráfica:       <input type="number"></p> 
+                    <p>Visualizar históricos de anteriores FY:       <input type="checkbox"></p>
+                    <p>Consolidar bookings por SO y Tecnología:      <input type="checkbox"></p> 
+                    
+                </td>
+                <td>
+                
+                <label style="font-size: 12px;">Output Format:
+                <select name="format">
+                    <option value="csv"> CSV</option>
+                    <option value="json" selected> JSON</option>
+                    <option value="form"> FORMULAE</option>
+                </select></label><br />
+                <p>Pulse para cargar fichero XLS: <input type="file" name="xlfile" id="xlf" /></p><br />
+                Advanced Demo Options: <br />
+                Use Web Workers: (when available) <input type="checkbox" name="useworker" checked><br />
+                Use Transferrables: (when available) <input type="checkbox" name="xferable" checked><br />
+                Use readAsBinaryString: (when available) <input type="checkbox" name="userabs" checked><br />
+                </td>
+                </table>
+            </div>
+        </div>
+    </body>
+</div>
+
+
+</body>
+</html>
